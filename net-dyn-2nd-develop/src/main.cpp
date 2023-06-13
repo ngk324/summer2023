@@ -13,6 +13,28 @@
 
 #include <cmath>
 
+double round(double var, int place)
+{
+    double value = (int)(var * 100 + .5);
+    return (double)value / 100;
+}
+
+void calc_steady_state(const std::vector<double>& values, double freq){
+    double sum = 0;
+    int counter = 0;
+    for(int i =0; i < values.size(); i++){
+        if(values[i] == freq){
+            //sum = sum + 1000000;
+            counter++;
+            std::cout << "\n" << values[i] << " " << freq << "\n";
+        }
+        else{
+            sum = sum + 1.0/(values[i] - freq);
+        }
+    }
+    std::cout << "\nSteady state solution: " << sum << " counter: " << counter << "\n";
+}
+
 
 void plotHeatMap(Eigen::Matrix<float, -1, 1> arr, int size)
 {
@@ -79,7 +101,7 @@ void plotHeatMap(Eigen::Matrix<float, -1, 1> arr, int size)
 }
 
 
-void plotHistogram(const std::vector<float>& values, int bins = 10)
+void plotHistogram(const std::vector<double>& values, int bins = 10)
 {
     // Find the minimum and maximum values in the vector
     int minValue = *std::min_element(values.begin(), values.end());
@@ -119,7 +141,8 @@ void plotHistogram(const std::vector<float>& values, int bins = 10)
 std::vector<std::pair<float, Eigen::VectorXf>> get_eigen_pairs(Eigen::MatrixXf &matrix)
 {
     std::vector<std::pair<float, Eigen::VectorXf>> eigen_pairs;
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXf> solver(matrix);
+    //Eigen::SelfAdjointEigenSolver<Eigen::MatrixXf> solver(matrix);
+    Eigen::EigenSolver<Eigen::MatrixXf> solver(matrix);
     Eigen::VectorXcf eigVals = solver.eigenvalues();
     Eigen::MatrixXcf eigVecs = solver.eigenvectors();
 
@@ -137,8 +160,8 @@ std::vector<std::pair<float, Eigen::VectorXf>> get_eigen_pairs(Eigen::MatrixXf &
     return eigen_pairs;
 }
 
-int findModeIndex(const std::vector<float>& nums) {
-    std::unordered_map<int, int> freq;
+int findModeIndex(const std::vector<double>& nums) {
+    std::unordered_map<double, double> freq;
     int maxFreq = 0;
     int modeIndex = -1;
 
@@ -162,13 +185,13 @@ int main(int argc, char *argv[])
         decentralizedAlg = std::stoi(argv[1]);
     }
     // Initialize and construct simple graph
-    int xGrid{50}, yGrid{50};
+    int xGrid{2}, yGrid{2};
     Graph my_graph;
     my_graph.constructSimpleGraph(xGrid, yGrid);
-    my_graph.computeMatrices();
+    my_graph.computeMatrices2();
 
-    int MAX_X = 50;
-    int MAX_Y = 50;
+    int MAX_X = 2;
+    int MAX_Y = 2;
     int PLOT_SCALE = 70;
     int vPad = 2;
     int hPad = 2;
@@ -177,42 +200,44 @@ int main(int argc, char *argv[])
 
     double amp{1};
     std::vector<int> modes;
-    Eigen::MatrixXf B_Matrix = stiffness * (my_graph.laplacianMatrix + epsilon * Eigen::MatrixXf::Identity(my_graph.nodes.size(), my_graph.nodes.size()));
+    //Eigen::MatrixXf B_Matrix = stiffness * (my_graph.laplacianMatrix + epsilon * Eigen::MatrixXf::Identity(my_graph.nodes.size(), my_graph.nodes.size()));
+    Eigen::MatrixXf B_Matrix = my_graph.laplacianMatrix;
     auto eigen_pairs = get_eigen_pairs(B_Matrix);
     float chosenEigVal{0};
     Eigen::VectorXf chosenEigVec;
 
     std::cout << "end eign comp." << std::endl;
 
-
-    std::vector<float> ev;
+    std::vector<double> ev;
     for (int i{0}; i < eigen_pairs.size(); i++)
     {
-        ev.push_back(eigen_pairs[i].first);
-        //std::cout << i << ": " << eigen_pairs[i].first << "\n";
+        ev.push_back(round(eigen_pairs[i].first,2));
+        std::cout << i << ": " << ev[i] << "\n";
     }
 
     int modeIndex = findModeIndex(ev);
 
+    calc_steady_state(ev, ev[modeIndex]);
+
     if (modeIndex != -1) {
-        std::cout << "Mode Index: " << modeIndex << " Mode Value: " << eigen_pairs[modeIndex].first << std::endl;
+        std::cout << "Mode Index: " << modeIndex << " Mode Value: " << ev[modeIndex] << std::endl;
     } else {
         std::cout << "No mode found." << std::endl;
     }
 
-    chosenEigVal = eigen_pairs[modes.front()].first;
+    chosenEigVal = eigen_pairs[modeIndex].first;
 
     plotHistogram(ev);
     plotHeatMap(eigen_pairs[modeIndex].second, MAX_X);
     //std::cout << eigen_pairs[0].second << "\n";
     
-    /*
+    
     // Generate plot
     Plot my_plot("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
     my_plot.plotGraph(my_graph);
     my_plot.displayPlot(true);
     
-
+    /*
     double freq{sqrt(chosenEigVal)};
     Force my_force(amp, freq, my_graph.nodes.size());
     my_force.insertForceElement(1);

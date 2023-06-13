@@ -15,6 +15,8 @@ public:
 
     void computeMatrices();
 
+    void computeMatrices2();
+
     void simulateDynamics(int tMax);
 };
 
