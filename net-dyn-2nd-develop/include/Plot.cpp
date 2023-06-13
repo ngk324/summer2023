@@ -90,7 +90,8 @@ void Plot::plotNode(Node &n, int size)
     cv::circle(currentImg, transformGraphToPlot(n), size, color, -1);
 }
 
-void Plot::plotEdge(Node &n1, Node &n2, CvScalar color, double thickness)
+//void Plot::plotEdge(Node &n1, Node &n2, CvScalar color, double thickness)
+void Plot::plotEdge(Node &n1, Node &n2,  double thickness, CvScalar color)
 {
     cv::line(currentImg, transformGraphToPlot(n1), transformGraphToPlot(n2), color, thickness);
 }
@@ -101,7 +102,11 @@ void Plot::plotGraph(Graph &g)
     {
         for (int j{0}; j < g.nodes[i]->neighbors.size(); j++)
         {
-         //   plotEdge(*g.nodes[i], *g.nodes[i]->neighbors[j]);
+            if((g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)) > 0){
+                //std::cout << "(i,j): " << i << ", " << j << ": " << ((int)(g.adjacencyMatrix.coeff(i,j)*10)) << "\n";
+                plotEdge(*g.nodes[i], *g.nodes[i]->neighbors[j], ((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*10)));
+                //((int)g.adjacencyMatrix.coeff(i,j)*10)
+            }
         }
     }
 

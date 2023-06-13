@@ -1,4 +1,5 @@
 #include "Graph.hpp"
+#include <iostream>
 
 void Graph::constructSimpleGraph(int x, int y)
 {
@@ -48,11 +49,11 @@ void Graph::computeMatrices()
     Eigen::MatrixXf D(nNodes, nNodes);
     for (int i{0}; i < nNodes; i++)
     {
-        int sum = 0;
+        double sum = 0;
         for (int j{0}; j < nNodes; j++)
         {
             D(i, j) = 0;
-            sum += A(i, j);
+            sum += (double)A(i, j);
         }
         D(i, i) = sum;
     }
@@ -73,25 +74,14 @@ void Graph::computeMatrices2()
             A(i, j) = 0;
             if (nodes[i]->isNeighbor(nodes[j]))
             {
-                /*if(i % 3 == 0 and j % 2 == 0){
-                    A(i, j) = .8;
-                    A(j, i) = .8;
-                }*/
-                //else{
-                    A(i, j) = 1;
-                    A(j, i) = 1;
-                //}
+                std::cout << i << ", " << j << "\n";
+                A(i, j) = 1;
+                A(j, i) = 1;
             }
         }
     }
-    A(0,1) = 0.8;
-    A(0,2) = 0.6;
-    A(1,0) = 0.6;
-    A(1,3) = 0.6;
-    A(2,0) = 0.8;
-    A(2,3) = 0.8;
-    A(3,1) = 0.8;
-    A(3,2) = 0.6;
+
+
     adjacencyMatrix = A;
     Eigen::MatrixXf D(nNodes, nNodes);
     for (int i{0}; i < nNodes; i++)
