@@ -26,7 +26,6 @@ void calc_steady_state(const std::vector<double>& values, double freq){
         if(values[i] == freq){
             //sum = sum + 1000000;
             counter++;
-            std::cout << "\n" << values[i] << " " << freq << "\n";
         }
         else{
             sum = sum + 1.0/(values[i] - freq);
@@ -188,13 +187,19 @@ int main(int argc, char *argv[])
     int xGrid{2}, yGrid{2};
     Graph my_graph;
     my_graph.constructSimpleGraph(xGrid, yGrid);
-    my_graph.computeMatrices2();
+    my_graph.computeMatrices();
 
     int MAX_X = 2;
     int MAX_Y = 2;
     int PLOT_SCALE = 70;
     int vPad = 2;
     int hPad = 2;
+
+    for(int i = 0; i < MAX_X*MAX_X; i++){
+        for(int j = 0; j < MAX_Y*MAX_Y; j++){
+            std::cout << i << ", " << j << ": " << my_graph.laplacianMatrix(i,j) << "\n";
+        }
+    }
 
     double damping{0.1}, stiffness{5}, epsilon{0.01};
 
