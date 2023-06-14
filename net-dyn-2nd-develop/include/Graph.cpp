@@ -45,6 +45,10 @@ void Graph::computeMatrices()
             }
         }
     }
+    A(1,3) = 1.5;
+    A(3,1) = 1.5;
+    A(0,2) = .5;
+    A(2,0) = .5;
     adjacencyMatrix = A;
     Eigen::MatrixXf D(nNodes, nNodes);
     for (int i{0}; i < nNodes; i++)

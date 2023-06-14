@@ -42,7 +42,7 @@ public:
 
     void plotNode(Node &n, int size = defaultNodeSize);
 
-    void plotEdge(Node &n1, Node &n2, double thickness, CvScalar color = defaultEdgeColor);
+    void plotEdge(Node &n1, Node &n2, double thickness, CvScalar color);
 
     void plotGraph(Graph &g);
 
