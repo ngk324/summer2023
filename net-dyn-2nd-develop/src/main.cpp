@@ -100,7 +100,7 @@ void plotHeatMap(Eigen::Matrix<float, -1, 1> arr, int size)
 }
 
 
-void plotHistogram(const std::vector<double>& values, int bins = 10)
+void plotHistogram(const std::vector<double>& values, int bins = 9)
 {
     // Find the minimum and maximum values in the vector
     int minValue = *std::min_element(values.begin(), values.end());
