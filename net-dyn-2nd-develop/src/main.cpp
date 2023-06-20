@@ -270,72 +270,6 @@ int main(int argc, char *argv[])
 
     //calc_steady_state(ev, ev[modeIndex]);
 
-    Eigen::MatrixXf var_grad(MAX_X, MAX_Y);
-    std::vector<double> var_gradient;
-
-    double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
-
-    /*
-    std::cout  << "Size 1: " << my_graph.nodes.size() << "\n";
-    std::cout  << "Size 2: " << my_graph.nodes[0]->neighbors.size() << "\n";
-    std::cout  << "Value 1: " << (*my_graph.nodes[0]).id << "\n";
-    std::cout  << "Value 2: " << (*my_graph.nodes[0]->neighbors[1]).id << "\n";
-    */
-
-    auto eigen_pairs3 = get_eigen_pairs2(B_Matrix);
-    /*
-    std::cout << "VECTORS \n\n";
-
-    for(int x = 0; x < eigen_pairs3[0].second.size(); x++){
-        std::cout << "Vector " << x << " " << eigen_pairs3[x].second << "\n";
-    }
-    */
-    //Eigen::MatrixXf test =
-
-/*
-    int i = 3;
-    int j = 2;
-    for(int x = 0; x < eigen_pairs[0].size(); x++){
-        for(int y = 0; y < eigen_pairs.size(); y++){
-
-        }
-    }*/
-
-    //std::cout << "test " << eigen_pairs[].second.row(0) << "\n\n";
-
-    for(int i = 0; i < my_graph.nodes.size(); i++){
-        for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
-            /*if(my_graph.nodes[i]->isNeighbor(my_graph.nodes[j])){
-                var_grad(i,j) = compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[0]).id].second, eigen_pairs[(*my_graph.nodes[0]->neighbors[1]).id].second);
-            }*/
-            if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){
-                var_gradient.push_back(compute_var_grad(ev, mean, eigen_pairs3[(*my_graph.nodes[i]).id].second, eigen_pairs3[(*my_graph.nodes[i]->neighbors[j]).id].second));
-                //std::cout << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << ": " << (compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[i]).id].second, eigen_pairs[(*my_graph.nodes[i]->neighbors[j]).id].second)) << "\n";
-                //var_gradient.push_back(compute_var_grad(ev, mean, eigen_pairs[].second, eigen_pairs[].second));
-            }
-        }
-    }
-
-    /*for(int i = 0; i < var_gradient.size(); i++){
-        std::cout << i << ": " << var_gradient[i] << "\n";
-    }*/
-
-    double vec_dot_unit_norm = 0;
-    std::vector<double> dot_vec;
-
-    for(int i = 0; i < var_gradient.size(); i++){
-        vec_dot_unit_norm = vec_dot_unit_norm + (var_gradient[i] * (1.0/sqrt(var_gradient.size())));
-    }
-
-    for(int i = 0; i < var_gradient.size(); i++){
-        dot_vec.push_back(var_gradient[i] - (vec_dot_unit_norm * (1.0/sqrt(var_gradient.size()))));
-    }
-    
-    for(int i = 0; i < dot_vec.size(); i++){
-        std::cout << i << ": " << dot_vec[i] << "\n";
-    }
-    std::cout << "\n\n";
-
     /*
     if (modeIndex != -1) {
         std::cout << "Mode Index: " << modeIndex << " Mode Value: " << ev[modeIndex] << std::endl;
@@ -347,59 +281,103 @@ int main(int argc, char *argv[])
 
     plotHistogram(ev);
     plotHeatMap(eigen_pairs[modeIndex].second, MAX_X);
-    //std::cout << eigen_pairs[0].second << "\n";
     
     
     // Generate plot
-    Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
-    my_plot2.plotGraph(my_graph);
-    my_plot2.displayPlot(true);
-
-    int counter = 0;
-    for(int i = 0; i < my_graph.nodes.size(); i++){
-        for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
-            /*if(my_graph.nodes[i]->isNeighbor(my_graph.nodes[j])){
-                var_grad(i,j) = compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[0]).id].second, eigen_pairs[(*my_graph.nodes[0]->neighbors[1]).id].second);
-            }*/
-            if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){
-                my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + dot_vec[counter];
-                my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) + dot_vec[counter];
-                //std::cout << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << ": " << (compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[i]).id].second, eigen_pairs[(*my_graph.nodes[i]->neighbors[j]).id].second)) << "\n";
-                std::cout << ((*my_graph.nodes[i]).id) << ", " << (*my_graph.nodes[i]->neighbors[j]).id << " - " << dot_vec[counter] << "\n";
-                counter++;
-            }
-        }
-    }
-
-    std::cout << "\n\n";
-
-    my_graph.computeMatrices2();
-    Eigen::MatrixXf B_Matrix2 = my_graph.laplacianMatrix;
-    auto eigen_pairs2 = get_eigen_pairs(B_Matrix2);
-
-    std::vector<double> ev2;
-    for (int i{0}; i < eigen_pairs2.size(); i++)
-    {
-        ev2.push_back(round(eigen_pairs2[i].first,2));
-        //std::cout << i << ": " << ev[i] << "\n";
-    }
-
-    for(int i = 0; i < MAX_X*MAX_X; i++){
-        for(int j = 0; j < MAX_Y*MAX_Y; j++){
-            std::cout << i << ", " << j << ": " << my_graph.laplacianMatrix(i,j) << "\n";
-        }
-    }
-
-    modeIndex = findModeIndex(ev2);
-
-    plotHistogram(ev2);
-
     Plot my_plot("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
     my_plot.plotGraph(my_graph);
     my_plot.displayPlot(true);
 
-    plotHeatMap(eigen_pairs2[modeIndex].second, MAX_X);
-    
+    for(int f = 0; f < 5; f++){
+        Eigen::MatrixXf var_grad(MAX_X, MAX_Y);
+        std::vector<double> var_gradient;
+
+        double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
+
+        double sq_sum = std::inner_product(ev.begin(), ev.end(), ev.begin(), 0.0);
+        double stdev = std::sqrt(sq_sum / ev.size() - mean * mean);
+
+        std::cout << stdev * stdev << "\n";
+
+        auto eigen_pairs3 = get_eigen_pairs2(B_Matrix);
+
+
+        for(int i = 0; i < my_graph.nodes.size(); i++){
+            for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
+                /*if(my_graph.nodes[i]->isNeighbor(my_graph.nodes[j])){
+                    var_grad(i,j) = compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[0]).id].second, eigen_pairs[(*my_graph.nodes[0]->neighbors[1]).id].second);
+                */
+                if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){
+                    var_gradient.push_back(compute_var_grad(ev, mean, eigen_pairs3[(*my_graph.nodes[i]).id].second, eigen_pairs3[(*my_graph.nodes[i]->neighbors[j]).id].second));
+                    //std::cout << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << ": " << (compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[i]).id].second, eigen_pairs[(*my_graph.nodes[i]->neighbors[j]).id].second)) << "\n";
+                    //var_gradient.push_back(compute_var_grad(ev, mean, eigen_pairs[].second, eigen_pairs[].second));
+                }
+            }
+        }
+
+
+        double vec_dot_unit_norm = 0;
+        std::vector<double> dot_vec;
+
+        for(int i = 0; i < var_gradient.size(); i++){
+            vec_dot_unit_norm = vec_dot_unit_norm + (var_gradient[i] * (1.0/sqrt(var_gradient.size())));
+        }
+
+        for(int i = 0; i < var_gradient.size(); i++){
+            dot_vec.push_back(var_gradient[i] - (vec_dot_unit_norm * (1.0/sqrt(var_gradient.size()))));
+        }
+
+        int counter = 0;
+        for(int i = 0; i < my_graph.nodes.size(); i++){
+            for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
+                /*if(my_graph.nodes[i]->isNeighbor(my_graph.nodes[j])){
+                    var_grad(i,j) = compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[0]).id].second, eigen_pairs[(*my_graph.nodes[0]->neighbors[1]).id].second);
+                }*/
+                if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){
+                    my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + dot_vec[counter];
+                    my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) + dot_vec[counter];
+                    //std::cout << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << ": " << (compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[i]).id].second, eigen_pairs[(*my_graph.nodes[i]->neighbors[j]).id].second)) << "\n";
+                    //std::cout << ((*my_graph.nodes[i]).id) << ", " << (*my_graph.nodes[i]->neighbors[j]).id << " - " << dot_vec[counter] << "\n";
+                    counter++;
+                }
+            }
+        }
+
+        my_graph.computeMatrices2();
+        Eigen::MatrixXf B_Matrix2 = my_graph.laplacianMatrix;
+        auto eigen_pairs2 = get_eigen_pairs(B_Matrix2);
+
+        std::vector<double> ev2;
+        for (int i{0}; i < eigen_pairs2.size(); i++)
+        {
+            ev2.push_back(round(eigen_pairs2[i].first,2));
+            //std::cout << i << ": " << ev[i] << "\n";
+        }
+
+        /*for(int i = 0; i < MAX_X*MAX_X; i++){
+            for(int j = 0; j < MAX_Y*MAX_Y; j++){
+                std::cout << i << ", " << j << ": " << my_graph.laplacianMatrix(i,j) << "\n";
+            }
+        }*/
+
+        modeIndex = findModeIndex(ev2);
+
+        plotHistogram(ev2);
+
+        Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
+        my_plot2.plotGraph(my_graph);
+        my_plot2.displayPlot(true);
+
+        plotHeatMap(eigen_pairs2[modeIndex].second, MAX_X);
+
+        ev = ev2;
+        B_Matrix = B_Matrix2;
+    }
+
+    double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
+
+    double sq_sum = std::inner_product(ev.begin(), ev.end(), ev.begin(), 0.0);
+    double stdev = std::sqrt(sq_sum / ev.size() - mean * mean);
     /*
     double freq{sqrt(chosenEigVal)};
     Force my_force(amp, freq, my_graph.nodes.size());
