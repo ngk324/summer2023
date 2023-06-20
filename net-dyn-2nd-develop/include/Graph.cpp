@@ -45,10 +45,6 @@ void Graph::computeMatrices()
             }
         }
     }
-    A(1,3) = 1.5;
-    A(3,1) = 1.5;
-    A(0,2) = .5;
-    A(2,0) = .5;
     adjacencyMatrix = A;
     Eigen::MatrixXf D(nNodes, nNodes);
     for (int i{0}; i < nNodes; i++)
@@ -67,34 +63,22 @@ void Graph::computeMatrices()
     laplacianMatrix = L;
 }
 
+void Graph::calc_grad_descent(){
+
+}
+
 void Graph::computeMatrices2()
 {
     int nNodes = nodes.size();
-    Eigen::MatrixXf A(nNodes, nNodes);
-    for (int i{0}; i < nNodes; i++)
-    {
-        for (int j{0}; j < nNodes; j++)
-        {
-            A(i, j) = 0;
-            if (nodes[i]->isNeighbor(nodes[j]))
-            {
-                std::cout << i << ", " << j << "\n";
-                A(i, j) = 1;
-                A(j, i) = 1;
-            }
-        }
-    }
-
-
-    adjacencyMatrix = A;
     Eigen::MatrixXf D(nNodes, nNodes);
+    //Eigen::MatrixXf A(nNodes, nNodes) = adjacencyMatrix;
     for (int i{0}; i < nNodes; i++)
     {
-        int sum = 0;
+        double sum = 0;
         for (int j{0}; j < nNodes; j++)
         {
             D(i, j) = 0;
-            sum += A(i, j);
+            sum += (double)adjacencyMatrix(i, j);
         }
         D(i, i) = sum;
     }

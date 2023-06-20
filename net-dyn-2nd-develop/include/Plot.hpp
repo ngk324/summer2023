@@ -49,6 +49,8 @@ public:
     void initWindow();
 
     void displayPlot(bool waitForKey = false);
+
+    double round(double var, int place);
 };
 
 #endif
