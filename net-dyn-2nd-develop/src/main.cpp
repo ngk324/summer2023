@@ -13,6 +13,8 @@
 
 #include <cmath>
 
+#include <math.h>
+
 #include <numeric>
 
 /*double compute_var_grad(const std::vector<double>& values, double mean, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj){
@@ -23,11 +25,73 @@
     return d_var;
 }*/
 
-double compute_var_grad(const std::vector<double>& values, double mean, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj){
+/*double compute_var_grad(const std::vector<double>& values, double mean, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj){
     double d_var = 0; 
     for(int i = 0; i < values.size(); i++){
         d_var = d_var + (2.0/values.size()) * (values[i]-mean)*(vki[i] * vki[i] + vkj[i]*vkj[i] - 2.0*vki[i]*vkj[i]);
     }
+    return d_var;
+}*/
+
+double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev){
+    double d_var = 0; 
+
+    //double h = 1.09;
+
+    //double h = 0.54975 * stdev;
+
+    double h = stdev;
+
+    //(arctan((stdev)/x) / M_PI) - (arctan((-stdev)/x) / M_PI) = .68;
+
+    
+
+    for(int i = 1; i < values.size(); i++){
+        int index = i;
+        double maxVal;
+        int maxIndex;
+        if(index != 1){
+            //maxVal = ((4*h*h)/values[1]) * (1/(pow(pow(sqrt(values[1])-sqrt(values[index]),2) + h * h, 2)));   
+            maxVal = ((4*h*h)/values[index]) * (1/(pow(pow(sqrt(values[index])-sqrt(values[1]),2) + h * h, 2)));
+            maxIndex = 1;
+            //std::cout << " \nTest i,j " << i << " , " << 0 << " " << (a / (2 * values[1])) * exp(-b * (pow(values[1] - values[index],2)));
+            
+        }
+        else{
+            //maxVal = ((4*h*h)/values[2]) * (1/(pow(pow(sqrt(values[2])-sqrt(values[index]),2) + h * h, 2)));   
+            maxVal = ((4*h*h)/values[index]) * (1/(pow(pow(sqrt(values[index])-sqrt(values[2]),2) + h * h, 2)));
+            maxIndex = 2;
+            //std::cout << " \nTest i,j " << i << " , " << 0 << " " << (a / (2 * values[1])) * exp(-b * (pow(values[1] - values[index],2)));
+            
+        }
+        for(int j = 0; j < values.size(); j++){
+            if(j != index && j != maxIndex){
+                //double testVal = ((4*h*h)/values[j]) * (1/(pow(pow(sqrt(values[j])-sqrt(values[index]),2) + h * h, 2))); 
+                double testVal = ((4*h*h)/values[index]) * (1/(pow(pow(sqrt(values[index])-sqrt(values[j]),2) + h * h, 2)));
+                if(testVal > maxVal){
+                    maxVal = testVal;
+                    maxIndex = j;
+                }
+            }
+            //std::cout << " \nTest i,j " << i << " , " << j << " " << (a / (2 * values[j])) * exp(-b * (pow(values[j] - values[index],2)));
+        }
+
+        //std::cout << "Val " << maxVal << " Index " << maxIndex << "\n ";
+
+        //double min_func_val =  -((8 * h * h) / (values[maxIndex] * sqrt(values[index]))) * ((sqrt(values[index])-sqrt(values[maxIndex])) / pow(pow(sqrt(values[index]-sqrt(values[maxIndex])),2) + h * h,3));
+        //double min_func_val =  ((8 * h * h) / (values[maxIndex] * sqrt(values[index]))) * ((sqrt(values[maxIndex])-sqrt(values[index])) / pow(pow(sqrt(values[maxIndex])-sqrt(values[index]),2) + h * h,3));
+
+        //double min_func_val = ((4 * h*h)/(sqrt(values[index])*pow(values[index],1.5))) * ((-3 * values[index] + 4 * sqrt(values[maxIndex])*sqrt(values[index])-values[maxIndex]-h*h)/(pow(h*h+pow(-sqrt(values[index])+sqrt(values[maxIndex]),2),3)));
+        double min_func_val = -((4 * h*h)/(sqrt(values[index])*pow(values[index],1.5))) * ((3 * values[index] - 4 * sqrt(values[maxIndex])*sqrt(values[index])+values[maxIndex]+h*h)/(pow(h*h+pow(sqrt(values[index])-sqrt(values[maxIndex]),2),3)));
+        
+        d_var = d_var + min_func_val * (vki[i] * vki[i] + vkj[i]*vkj[i] - 2.0*vki[i]*vkj[i]);
+    }
+
+
+    /*for(int i = 0; i < values.size(); i++){
+        d_var = d_var + (2.0/values.size()) * (values[i]-mean)*(vki[i] * vki[i] + vkj[i]*vkj[i] - 2.0*vki[i]*vkj[i]);
+    }*/
+
     return d_var;
 }
 
@@ -118,7 +182,7 @@ void plotHeatMap(Eigen::Matrix<float, -1, 1> arr, int size)
 }
 
 
-void plotHistogram(const std::vector<double>& values, int bins = 8)
+void plotHistogram(const std::vector<double>& values, double bins = 8.0)
 {
     // Find the minimum and maximum values in the vector
     int minValue = *std::min_element(values.begin(), values.end());
@@ -216,7 +280,7 @@ int findModeIndex(const std::vector<double>& nums) {
             modeIndex = i;
         }
     }
-    //std::cout << "FreqCount: " << maxFreq << "\n";
+    std::cout << "\nFreqCount: " << maxFreq << "\n";
     return modeIndex;
 }
 
@@ -228,14 +292,14 @@ int main(int argc, char *argv[])
         decentralizedAlg = std::stoi(argv[1]);
     }
     // Initialize and construct simple graph
-    int xGrid{5}, yGrid{5};
+    int xGrid{20}, yGrid{20};
     Graph my_graph;
     my_graph.constructSimpleGraph(xGrid, yGrid);
     my_graph.computeMatrices();
 
-    int MAX_X = 5;
-    int MAX_Y = 5;
-    int PLOT_SCALE = 70;
+    int MAX_X = 20;
+    int MAX_Y = 20;
+    int PLOT_SCALE = 40;
     int vPad = 2;
     int hPad = 2;
 
@@ -244,9 +308,9 @@ int main(int argc, char *argv[])
         for(int j = 0; j < MAX_Y*MAX_Y; j++){
             std::cout << i << ", " << j << ": " << my_graph.laplacianMatrix(i,j) << "\n";
         }
-    }*/
+    }
     
-    std::cout << "\n\n";
+    std::cout << "\n\n";*/
     double damping{0.1}, stiffness{5}, epsilon{0.01};
 
     double amp{1};
@@ -263,19 +327,19 @@ int main(int argc, char *argv[])
     for (int i{0}; i < eigen_pairs.size(); i++)
     {
         ev.push_back(round(eigen_pairs[i].first,2));
-        //std::cout << i << ": " << ev[i] << "\n";
+        std::cout << ev[i] << ", ";
     }
 
     int modeIndex = findModeIndex(ev);
 
     //calc_steady_state(ev, ev[modeIndex]);
 
-    /*
+    
     if (modeIndex != -1) {
-        std::cout << "Mode Index: " << modeIndex << " Mode Value: " << ev[modeIndex] << std::endl;
+        std::cout << "\nMode Index: " << modeIndex << " Mode Value: " << ev[modeIndex] << std::endl;
     } else {
-        std::cout << "No mode found." << std::endl;
-    }*/
+        std::cout << "\nNo mode found." << std::endl;
+    }
 
     chosenEigVal = eigen_pairs[modeIndex].first;
 
@@ -288,16 +352,23 @@ int main(int argc, char *argv[])
     my_plot.plotGraph(my_graph);
     my_plot.displayPlot(true);
 
-    for(int f = 0; f < 5; f++){
+    //for(int f = 0; f < 150.0 / (.1 / sqrt(2*(MAX_X*MAX_X) - 2 * MAX_X)); f++){
+    for(int f = 0; f < 225; f++){
         Eigen::MatrixXf var_grad(MAX_X, MAX_Y);
         std::vector<double> var_gradient;
 
         double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
 
-        double sq_sum = std::inner_product(ev.begin(), ev.end(), ev.begin(), 0.0);
-        double stdev = std::sqrt(sq_sum / ev.size() - mean * mean);
+        std::vector<double> diff(ev.size());
+        std::transform(ev.begin(), ev.end(), diff.begin(),
+        std::bind2nd(std::minus<double>(), mean));
+        double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+        double stdev = std::sqrt(sq_sum / ev.size());
 
-        std::cout << stdev * stdev << "\n";
+        //std::cout << "\n" << (((double)f)  / (150.0 / (.1 / sqrt(2*(MAX_X*MAX_X) - 2 * MAX_X)))) * 100 <<  "% Variance : " << stdev * stdev << "\n";
+
+        std::cout << "\n" << "Variance : " << stdev * stdev << "\n";
+
 
         auto eigen_pairs3 = get_eigen_pairs2(B_Matrix);
 
@@ -308,12 +379,14 @@ int main(int argc, char *argv[])
                     var_grad(i,j) = compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[0]).id].second, eigen_pairs[(*my_graph.nodes[0]->neighbors[1]).id].second);
                 */
                 if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){
-                    var_gradient.push_back(compute_var_grad(ev, mean, eigen_pairs3[(*my_graph.nodes[i]).id].second, eigen_pairs3[(*my_graph.nodes[i]->neighbors[j]).id].second));
-                    //std::cout << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << ": " << (compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[i]).id].second, eigen_pairs[(*my_graph.nodes[i]->neighbors[j]).id].second)) << "\n";
+                    var_gradient.push_back(compute_var_grad(ev, eigen_pairs3[(*my_graph.nodes[i]).id].second, eigen_pairs3[(*my_graph.nodes[i]->neighbors[j]).id].second, stdev));
+                    //std::cout << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << ": " << (compute_var_grad(ev, mean, eigen_pairs3[(*my_graph.nodes[i]).id].second, eigen_pairs3[(*my_graph.nodes[i]->neighbors[j]).id].second)) << "\n";
                     //var_gradient.push_back(compute_var_grad(ev, mean, eigen_pairs[].second, eigen_pairs[].second));
                 }
             }
         }
+
+        //std::cout << "\n\n";
 
 
         double vec_dot_unit_norm = 0;
@@ -327,6 +400,15 @@ int main(int argc, char *argv[])
             dot_vec.push_back(var_gradient[i] - (vec_dot_unit_norm * (1.0/sqrt(var_gradient.size()))));
         }
 
+        std::cout << "\nv' vector \n";
+
+        for(int i = 0; i < var_gradient.size(); i++){
+           // std::cout << dot_vec[i] << "\n";
+        }
+
+
+        double ep = .001 / sqrt(2*(MAX_X*MAX_X) - 2 * MAX_X);
+        //double ep = 1;
         int counter = 0;
         for(int i = 0; i < my_graph.nodes.size(); i++){
             for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
@@ -334,8 +416,8 @@ int main(int argc, char *argv[])
                     var_grad(i,j) = compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[0]).id].second, eigen_pairs[(*my_graph.nodes[0]->neighbors[1]).id].second);
                 }*/
                 if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){
-                    my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + dot_vec[counter];
-                    my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) + dot_vec[counter];
+                    my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + ep * dot_vec[counter];
+                    my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) + ep * dot_vec[counter];
                     //std::cout << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << ": " << (compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[i]).id].second, eigen_pairs[(*my_graph.nodes[i]->neighbors[j]).id].second)) << "\n";
                     //std::cout << ((*my_graph.nodes[i]).id) << ", " << (*my_graph.nodes[i]->neighbors[j]).id << " - " << dot_vec[counter] << "\n";
                     counter++;
@@ -353,22 +435,25 @@ int main(int argc, char *argv[])
             ev2.push_back(round(eigen_pairs2[i].first,2));
             //std::cout << i << ": " << ev[i] << "\n";
         }
+    /*
+        std::cout << "Trace vales\n";
+        double trace = 0;
+        for(int i = 0; i < MAX_X*MAX_X; i++){
+            trace = trace + my_graph.laplacianMatrix(i,i);
+        }
 
-        /*for(int i = 0; i < MAX_X*MAX_X; i++){
-            for(int j = 0; j < MAX_Y*MAX_Y; j++){
-                std::cout << i << ", " << j << ": " << my_graph.laplacianMatrix(i,j) << "\n";
-            }
-        }*/
-
+        std::cout << "Trace" << trace << "\n";
+    
+    */
         modeIndex = findModeIndex(ev2);
 
-        plotHistogram(ev2);
+        //plotHistogram(ev2);
 
-        Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
-        my_plot2.plotGraph(my_graph);
-        my_plot2.displayPlot(true);
+        //Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
+        //my_plot2.plotGraph(my_graph);
+        //my_plot2.displayPlot(true);
 
-        plotHeatMap(eigen_pairs2[modeIndex].second, MAX_X);
+        //plotHeatMap(eigen_pairs2[modeIndex].second, MAX_X);
 
         ev = ev2;
         B_Matrix = B_Matrix2;
@@ -376,8 +461,39 @@ int main(int argc, char *argv[])
 
     double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
 
-    double sq_sum = std::inner_product(ev.begin(), ev.end(), ev.begin(), 0.0);
-    double stdev = std::sqrt(sq_sum / ev.size() - mean * mean);
+        std::vector<double> diff(ev.size());
+        std::transform(ev.begin(), ev.end(), diff.begin(),
+        std::bind2nd(std::minus<double>(), mean));
+        double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+        double stdev = std::sqrt(sq_sum / ev.size());
+
+    std::cout << "Var: " << stdev * stdev << "\n";
+/*
+    for(int i = 0; i < MAX_X*MAX_X; i++){
+        for(int j = 0; j < MAX_X*MAX_X; j++){
+            std::cout << "( " << i << ", " << j << ") :" << my_graph.laplacianMatrix(i,j) << "\n";
+        }
+    }*/
+
+    plotHistogram(ev);
+
+        Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
+        my_plot2.plotGraph(my_graph);
+        my_plot2.displayPlot(true);
+
+    for(int i = 0; i < ev.size(); i++){
+        std::cout << ev[i] << ", ";
+    }
+
+    if (modeIndex != -1) {
+        std::cout << "\nMode Index: " << modeIndex << " Mode Value: " << ev[modeIndex] << std::endl;
+    } else {
+        std::cout << "\nNo mode found." << std::endl;
+    }
+
+    
+
+        //plotHeatMap(eigen_pairs2[modeIndex].second, MAX_X);
     /*
     double freq{sqrt(chosenEigVal)};
     Force my_force(amp, freq, my_graph.nodes.size());
