@@ -18,6 +18,8 @@ public:
     void computeMatrices2();
 
     void simulateDynamics(int tMax);
+
+    void calc_grad_descent();
 };
 
 #endif

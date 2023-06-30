@@ -11,7 +11,8 @@ Plot::Plot(std::string name, int scale, int vPadding, int hPadding, int xMax, in
 {
     defaultNodeSize = plotScale * 0.2;
     defaultEdgeThickness = plotScale * 0.05;
-    blankImg = cv::Mat(cv::Size(maxX + 2 * verticalPadding - 1, maxY + 2 * horizontalPadding - 1), CV_8UC3, cv::Scalar(255, 255, 255));
+    //blankImg = cv::Mat(cv::Size(maxX + 2 * verticalPadding - 1, maxY + 2 * horizontalPadding - 1), CV_8UC3, cv::Scalar(255, 255, 255));
+    blankImg = cv::Mat(cv::Size(maxX + 2 * verticalPadding - 1, maxY + 2 * horizontalPadding - 1), CV_8UC3, cv::Scalar(0, 165, 255));
     cv::resize(blankImg, blankImg, cv::Size(), plotScale, plotScale);
     currentImg = blankImg.clone();
     initWindow();
@@ -110,20 +111,22 @@ void Plot::plotGraph(Graph &g)
         for (int j{0}; j < g.nodes[i]->neighbors.size(); j++)
         {
             //std::cout << g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id) << "\n";
-            if(max < g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id) && (*g.nodes[i]).id < (*g.nodes[i]->neighbors[j]).id){
+            if(max < g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)){
                 max = g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id);
             }
         }
     }
+    //std::cout << "edges plotted \n";
     for (int i{0}; i < g.nodes.size(); i++)
     {
         for (int j{0}; j < g.nodes[i]->neighbors.size(); j++)
         {
             //if((g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)) > 0 && i != j){
             if((*g.nodes[i]).id < (*g.nodes[i]->neighbors[j]).id){
-                //std::cout << "(i,j): " << (*g.nodes[i]).id << ", " << (*g.nodes[i]->neighbors[j]).id << ": " << round(max+(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*10))/max),5) << "\n";
+                //std::cout << "(i,j): " << (*g.nodes[i]).id << ", " << (*g.nodes[i]->neighbors[j]).id << ": " << round(1 + max+(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*5))/max),5) << "\n";
 
-                plotEdge(*g.nodes[i], *g.nodes[i]->neighbors[j], round(max+(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*10))/max),5), cvScalar(255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255)/max)),255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255))/max),255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255))/max)));
+                plotEdge(*g.nodes[i], *g.nodes[i]->neighbors[j], round(1 + max+(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*5))/max),5), cvScalar(255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255)/max)),255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255))/max),255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255))/max)));
+                //plotEdge(*g.nodes[i], *g.nodes[i]->neighbors[j], (255 + (int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id))) / 255, cvScalar(255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255)/max)),255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255))/max),255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255))/max)));
                 //((int)g.adjacencyMatrix.coeff(i,j)*10)
             }
         }
