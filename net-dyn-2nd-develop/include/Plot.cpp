@@ -99,8 +99,8 @@ void Plot::plotEdge(Node &n1, Node &n2,  double thickness, CvScalar color)
 
 double Plot::round(double var, int place)
 {
-    double value = (int)(var * 100 + .5);
-    return (double)value / 100;
+    double value = (int)(var * 10000 + .5);
+    return (double)value / 10000;
 }
 
 void Plot::plotGraph(Graph &g)
