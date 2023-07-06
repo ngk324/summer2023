@@ -185,7 +185,7 @@ void plotHeatMap(Eigen::Matrix<float, -1, 1> arr, int size)
 
 void plotHistogram(const std::vector<double>& values)
 {
-    double bins = 20.0;
+    double bins = 40.0;
     // Find the minimum and maximum values in the vector
     double minValue = *std::min_element(values.begin(), values.end());
     double maxValue = *std::max_element(values.begin(), values.end());
@@ -397,14 +397,24 @@ int main(int argc, char *argv[])
         
         double ep = .001 / sqrt(2*(MAX_X*MAX_X) - 2 * MAX_X);
         //double ep = 1;
+
+        std::vector<int> neg_index;
+        for(int i = 0; i < my_graph.nodes.size(); i++){
+            for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
+                neg_index.push_back(-1);
+            }    
+        }
         
         int counter_neg_index = 0;
-        int neg_index = -1;
+
         while(true){
             int counter = 0;
             int counter_neg_index = 0;
             bool neg_detected = false;
             std::vector<double> var_gradient;
+
+            
+
 
             for(int i = 0; i < my_graph.nodes.size(); i++){
                 for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
@@ -412,7 +422,7 @@ int main(int argc, char *argv[])
                         var_grad(i,j) = compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[0]).id].second, eigen_pairs[(*my_graph.nodes[0]->neighbors[1]).id].second);
                     */
                     if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){
-                        if(neg_index == counter_neg_index){
+                        if(neg_index[counter_neg_index] == 0){
                             std::cout << "\nTest " << counter_neg_index <<"\n";
                             var_gradient.push_back(0);
                         }
@@ -427,7 +437,14 @@ int main(int argc, char *argv[])
                     
                 }
             }
-            neg_index = -1;
+
+            int counter2 = 0;
+            for(int i = 0; i < my_graph.nodes.size(); i++){
+                for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
+                    neg_index[counter2] = 0;
+                }    
+            }
+            
 
             double vec_dot_unit_norm = 0;
             std::vector<double> dot_vec;
@@ -452,8 +469,8 @@ int main(int argc, char *argv[])
                         if(my_graph2.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + ep * dot_vec[counter] < 0.0){
                             std::cout << "\n" << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << " is negative " << my_graph2.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) << " + " << ep * dot_vec[counter] << "\n";
                             neg_detected = true;
-                            neg_index = counter;
-                            std::cout << "\n Neg index counter " << neg_index << "\n";
+                            neg_index[counter] = 0;
+                            std::cout << "\n Neg index counter " << counter << "\n";
                         }
                         //std::cout << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << ": " << (compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[i]).id].second, eigen_pairs[(*my_graph.nodes[i]->neighbors[j]).id].second)) << "\n";
                         //std::cout << ((*my_graph.nodes[i]).id) << ", " << (*my_graph.nodes[i]->neighbors[j]).id << " - " << dot_vec[counter] << "\n";
@@ -501,7 +518,7 @@ int main(int argc, char *argv[])
         B_Matrix = B_Matrix2;
         itCounter++;
 
-        if(itCounter == 273){
+        if(itCounter == 500){
             break;
         }
     }
