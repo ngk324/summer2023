@@ -361,10 +361,9 @@ int main(int argc, char *argv[])
     // while loop to for each iteration of gradient decent
     int itCounter = 0;
     bool exit = false;
-    auto eigen_pairs2 = get_eigen_pairs(B_Matrix);
+    auto eigen_pairs2 = get_eigen_pairs2(B_Matrix);
     while(exit == false){
         std::cout << "\n\nIteration: " << itCounter; 
-        //Eigen::MatrixXf var_grad(MAX_X, MAX_Y);
 
         mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
 
@@ -482,11 +481,13 @@ int main(int argc, char *argv[])
         for(int i = 0; i < my_graph.nodes.size(); i++){
             for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
                 edgeSum = edgeSum + my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id);
+                //if(itCounter % 50 == 0){
+                  //  std::cout << edgeSum << "   "; 
+               // }
             }    
         }
 
         std::cout << "Trace: " << trace << " EdgeSum: " << edgeSum << "\n";
-
     
         //plotHistogram(ev2);
 
@@ -498,25 +499,6 @@ int main(int argc, char *argv[])
         ev = ev2;
         B_Matrix = B_Matrix2;
         itCounter++;
-/*
-        if(itCounter % 500 == 0){
-            char key = (char)cv::waitKey(); // explicit cast
-            if(key == 27)
-            {
-                break;
-            }
-            else{
-                auto eigen_pairs_final = get_eigen_pairs(B_Matrix);
-                plotHeatMap(eigen_pairs_final[0].second, MAX_X, "EV0");
-                plotHeatMap(eigen_pairs_final[1].second, MAX_X, "EV1");
-                plotHeatMap(eigen_pairs_final[2].second, MAX_X, "EV2");
-                plotHeatMap(eigen_pairs_final[3].second, MAX_X, "EV3");
-                Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
-                my_plot2.plotGraph(my_graph);
-                my_plot2.displayPlot(true);
-            }
-        }
-        */
     
         if(itCounter % 100 == 0){
             plotHistogram(ev);
