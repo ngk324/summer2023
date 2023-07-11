@@ -1,30 +1,19 @@
 // OpenCV libraries
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
-
 #include <Eigen/Eigenvalues>
+#include <cmath>
+#include <math.h>
+#include <numeric>
+#include <iostream>
 
 // My headers
 #include "include/Plot.hpp"
 #include "include/Dynamics.hpp"
 #include "include/Force.hpp"
 
-#include <opencv2/opencv.hpp>
 
-#include <cmath>
-
-#include <math.h>
-
-#include <numeric>
-
-/*double compute_var_grad(const std::vector<double>& values, double mean, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj){
-    double d_var = 0; 
-    for(int i = 0; i < values.size(); i++){
-        d_var = d_var + (2.0/values.size()) * (values[i]-mean)*(vki[i] * vki[i] + vkj[i]*vkj[i] - 2.0*vki[i]*vkj[i]);
-    }
-    return d_var;
-}*/
-
+// max
 double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev){
     double d_var = 0; 
 
@@ -32,23 +21,27 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
 
     double printVal;
 
+
+    
     // loops through each element of lambda_j
-    for(int i = 1; i < values.size(); i++){
+    for(int i = 0; i < values.size(); i++){
         int index = i;
         double maxVal;
         int maxIndex;
-        
+
+        double k = .010;
+
         // finds lambda_k that maximizes 
         if(index != 1){
             //maxVal = ((4*h*h)/values[1]) * (1/(pow(pow(sqrt(values[1])-sqrt(values[index]),2) + h * h, 2)));   
-            maxVal = ((4*h*h)/values[index]) * (1/(pow(pow(sqrt(values[index])-sqrt(values[1]),2) + h * h, 2)));
+            maxVal = ((4*h*h)/(values[index]+k)) * (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[1]+k),2) + h * h, 2)));
             maxIndex = 1;
             //std::cout << " \nTest i,j " << i << " , " << 0 << " " << (a / (2 * values[1])) * exp(-b * (pow(values[1] - values[index],2)));
             
         }
         else{
             //maxVal = ((4*h*h)/values[2]) * (1/(pow(pow(sqrt(values[2])-sqrt(values[index]),2) + h * h, 2)));   
-            maxVal = ((4*h*h)/values[index]) * (1/(pow(pow(sqrt(values[index])-sqrt(values[2]),2) + h * h, 2)));
+            maxVal = ((4*h*h)/(values[index]+k)) * (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[2]+k),2) + h * h, 2)));
             maxIndex = 2;
             //std::cout << " \nTest i,j " << i << " , " << 0 << " " << (a / (2 * values[1])) * exp(-b * (pow(values[1] - values[index],2)));
             
@@ -56,7 +49,7 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
         for(int j = 0; j < values.size(); j++){
             if(j != index && j != maxIndex){
                 //double testVal = ((4*h*h)/values[j]) * (1/(pow(pow(sqrt(values[j])-sqrt(values[index]),2) + h * h, 2))); 
-                double testVal = ((4*h*h)/values[index]) * (1/(pow(pow(sqrt(values[index])-sqrt(values[j]),2) + h * h, 2)));
+                double testVal = ((4*h*h)/(values[index]+k)) * (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[j]+k),2) + h * h, 2)));
                 if(testVal > maxVal){
                     maxVal = testVal;
                     maxIndex = j;
@@ -65,17 +58,54 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
             //std::cout << " \nTest i,j " << i << " , " << j << " " << (a / (2 * values[j])) * exp(-b * (pow(values[j] - values[index],2)));
         }
         printVal = maxVal;
-
         //std::cout << "Val " << maxVal << " Index " << maxIndex << "\n ";
 
-        double min_func_val = -((4 * h*h)/(sqrt(values[index])*pow(values[index],1.5))) * ((3 * values[index] - 4 * sqrt(values[maxIndex])*sqrt(values[index])+values[maxIndex]+h*h)/(pow(h*h+pow(sqrt(values[index])-sqrt(values[maxIndex]),2),3)));
-        
+        //double min_func_val = -((4 * h*h)/(sqrt(values[index] + k)*pow(values[index] + k,1.5))) * ((3 * values[index] + k- 4 * sqrt(values[maxIndex]+k)*sqrt(values[index]+k)+values[maxIndex]+k+h*h)/(pow(h*h+pow(sqrt(values[index]+k)-sqrt(values[maxIndex]+k),2),3)));
+        //double min_func_val = -((4 * h*h)/(sqrt(values[index])*pow(values[index],1.5))) * ((3 * values[index]- 4 * sqrt(values[maxIndex])*sqrt(values[index])+values[maxIndex]+h*h)/(pow(h*h+pow(sqrt(values[index])-sqrt(values[maxIndex]),2),3)));
+        double min_func_val = -((4 * h*h)/pow(values[index] + k,3.5)) * ((- pow(values[index]+k,1.5) * (h*h + pow(sqrt(values[index]+k)-sqrt(values[maxIndex]+k),2)) - 2 * pow(values[index]+k,2)*(sqrt(values[index]+k)-sqrt(values[maxIndex]+k))) / (pow(h*h + pow(sqrt(values[index]+k) - sqrt(values[maxIndex]+k),2),3)));
         d_var = d_var + min_func_val * (vki[i] * vki[i] + vkj[i]*vkj[i] - 2.0*vki[i]*vkj[i]);
-    }
 
+    }
     //std::cout << "\nObj func: " << printVal;
     return d_var;
 }
+
+/*
+// summation
+double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev){
+    double d_var = 0; 
+
+    double h = stdev;
+
+    double printVal;
+
+    double min_func_val = 0;
+
+    
+    // loops through each element of lambda_j
+    for(int i = 1; i < values.size(); i++){
+        int index = i;
+        double maxVal;
+        int maxIndex;
+
+        printVal = 0;
+
+        //std::cout << "Val " << maxVal << " Index " << maxIndex << "\n ";
+
+        //double min_func_val = -((4 * h*h)/(sqrt(values[index])*pow(values[index],1.5))) * ((3 * values[index] - 4 * sqrt(values[maxIndex])*sqrt(values[index])+values[maxIndex]+h*h)/(pow(h*h+pow(sqrt(values[index])-sqrt(values[maxIndex]),2),3)));
+        
+        //d_var = d_var + min_func_val * (vki[i] * vki[i] + vkj[i]*vkj[i] - 2.0*vki[i]*vkj[i]);
+
+        for(int j = 0; j < values.size(); j++){
+            printVal = printVal + -((4 * h*h)/(sqrt(values[index])*pow(values[index],1.5))) * ((3 * values[index] - 4 * sqrt(values[j])*sqrt(values[index])+values[j]+h*h)/(pow(h*h+pow(sqrt(values[index])-sqrt(values[j]),2),3)));
+        }
+
+        d_var = d_var + printVal * (vki[i] * vki[i] + vkj[i]*vkj[i] - 2.0*vki[i]*vkj[i]);
+    }
+    //std::cout << "\nObj func: " << printVal;
+    return d_var;
+}
+*/
 
 // rounds to 4 decimal places
 double round(double var, int place)
@@ -84,7 +114,7 @@ double round(double var, int place)
     return (double)value / 10000;
 }
 
-void plotHeatMap(Eigen::Matrix<float, -1, 1> arr, int size)
+void plotHeatMap(Eigen::Matrix<float, -1, 1> arr, int size, char* name)
 {
     // Define dimensions of the heatmap
     int width = 400;
@@ -108,6 +138,8 @@ void plotHeatMap(Eigen::Matrix<float, -1, 1> arr, int size)
     // Find the minimum and maximum values in the heatmap array
     double minValue = heatmap[0][0];
     double maxValue = heatmap[0][0];
+    //double minValue = -1;
+    //double maxValue = 1;
     for (int i = 0; i < width; ++i)
     {
         for (int j = 0; j < height; ++j)
@@ -139,19 +171,19 @@ void plotHeatMap(Eigen::Matrix<float, -1, 1> arr, int size)
     }
 
     // Display the heatmap
-    cv::imshow("Heatmap", image);
+    cv::imshow(name, image);
 
     // Wait for a key press
     cv::waitKey(0);
 
     // Close the window
-    cv::destroyAllWindows();
+    //cv::destroyAllWindows();
 }
 
 
 void plotHistogram(const std::vector<double>& values)
 {
-    double bins = 40.0;
+    double bins = 15.0;
     // Find the minimum and maximum values in the vector
     double minValue = *std::min_element(values.begin(), values.end());
     double maxValue = *std::max_element(values.begin(), values.end());
@@ -247,7 +279,7 @@ int findModeIndex(const std::vector<double>& nums) {
             modeIndex = i;
         }
     }
-    std::cout << "\nFreqCount: " << maxFreq << "\n";
+    std::cout << "Mode FreqCount: " << maxFreq << "\n";
     return modeIndex;
 }
 
@@ -305,11 +337,20 @@ int main(int argc, char *argv[])
     } else {
         std::cout << "\nNo mode found." << std::endl;
     }
+    double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
+
+    std::vector<double> diff(ev.size());
+    std::transform(ev.begin(), ev.end(), diff.begin(),
+    std::bind2nd(std::minus<double>(), mean));
+    double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+    double stdev = std::sqrt(sq_sum / ev.size());
+
+    std::cout << "\n" << "Variance : " << stdev * stdev << "\n";
 
     chosenEigVal = eigen_pairs[modeIndex].first;
 
     plotHistogram(ev);
-    plotHeatMap(eigen_pairs[modeIndex].second, MAX_X);
+    plotHeatMap(eigen_pairs[modeIndex].second, MAX_X,"Mode EV");
     
     
     // Generate plot
@@ -320,20 +361,21 @@ int main(int argc, char *argv[])
     // while loop to for each iteration of gradient decent
     int itCounter = 0;
     bool exit = false;
-    auto eigen_pairs2 = eigen_pairs;
+    auto eigen_pairs2 = get_eigen_pairs(B_Matrix);
     while(exit == false){
-        std::cout << "iteration :" << itCounter; 
+        std::cout << "\n\nIteration: " << itCounter; 
         //Eigen::MatrixXf var_grad(MAX_X, MAX_Y);
 
-        double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
+        mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
 
-        std::vector<double> diff(ev.size());
-        std::transform(ev.begin(), ev.end(), diff.begin(),
+        std::vector<double> diff1(ev.size());
+        std::transform(ev.begin(), ev.end(), diff1.begin(),
         std::bind2nd(std::minus<double>(), mean));
-        double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-        double stdev = std::sqrt(sq_sum / ev.size());
+        sq_sum = std::inner_product(diff1.begin(), diff1.end(), diff1.begin(), 0.0);
+        stdev = std::sqrt(sq_sum / ev.size());
 
-        std::cout << "\n" << "Variance : " << stdev * stdev << "\n";
+        std::cout << "\nStarting Variance: " << stdev * stdev << "\n";
+        modeIndex = findModeIndex(ev);
 
         auto eigen_pairs3 = eigen_pairs2;        
 
@@ -432,13 +474,19 @@ int main(int argc, char *argv[])
             //std::cout << i << ": " << ev[i] << "\n";
         }
     
-        std::cout << "Trace vales\n";
         double trace = 0;
+        double edgeSum = 0;
         for(int i = 0; i < MAX_X*MAX_X; i++){
             trace = trace + my_graph.laplacianMatrix(i,i);
         }
+        for(int i = 0; i < my_graph.nodes.size(); i++){
+            for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
+                edgeSum = edgeSum + my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id);
+            }    
+        }
 
-        std::cout << "Trace" << trace << "\n";
+        std::cout << "Trace: " << trace << " EdgeSum: " << edgeSum << "\n";
+
     
         //plotHistogram(ev2);
 
@@ -447,25 +495,58 @@ int main(int argc, char *argv[])
         //my_plot2.displayPlot(true);
 
         //plotHeatMap(eigen_pairs2[modeIndex].second, MAX_X);
-        modeIndex = findModeIndex(ev2);
         ev = ev2;
         B_Matrix = B_Matrix2;
         itCounter++;
-
-        if(itCounter == 500){
-            break;
+/*
+        if(itCounter % 500 == 0){
+            char key = (char)cv::waitKey(); // explicit cast
+            if(key == 27)
+            {
+                break;
+            }
+            else{
+                auto eigen_pairs_final = get_eigen_pairs(B_Matrix);
+                plotHeatMap(eigen_pairs_final[0].second, MAX_X, "EV0");
+                plotHeatMap(eigen_pairs_final[1].second, MAX_X, "EV1");
+                plotHeatMap(eigen_pairs_final[2].second, MAX_X, "EV2");
+                plotHeatMap(eigen_pairs_final[3].second, MAX_X, "EV3");
+                Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
+                my_plot2.plotGraph(my_graph);
+                my_plot2.displayPlot(true);
+            }
+        }
+        */
+    
+        if(itCounter % 100 == 0){
+            plotHistogram(ev);
+            Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
+            my_plot2.plotGraph(my_graph);
+            my_plot2.displayPlot(true);
+            auto eigen_pairs_final = get_eigen_pairs(B_Matrix);
+            plotHeatMap(eigen_pairs_final[0].second, MAX_X, "EV0");
+            plotHeatMap(eigen_pairs_final[1].second, MAX_X, "EV1");
+            plotHeatMap(eigen_pairs_final[2].second, MAX_X, "EV2");
+            plotHeatMap(eigen_pairs_final[3].second, MAX_X, "EV3");
+            std::cout << "Enter q to exit or press enter to continue: ";
+            int a = getc(stdin);
+            if(a ==113){
+                break;
+            }
         }
     }
     
-    double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
+    
+    mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
 
-    std::vector<double> diff(ev.size());
-    std::transform(ev.begin(), ev.end(), diff.begin(),
+    std::vector<double> diff2(ev.size());
+    std::transform(ev.begin(), ev.end(), diff2.begin(),
     std::bind2nd(std::minus<double>(), mean));
-    double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-    double stdev = std::sqrt(sq_sum / ev.size());
+    sq_sum = std::inner_product(diff2.begin(), diff2.end(), diff2.begin(), 0.0);
+    stdev = std::sqrt(sq_sum / ev.size());
 
-    std::cout << "Var: " << stdev * stdev << "\n";
+    std::cout << "Final Variance: " << stdev * stdev << "\n";
+    modeIndex = findModeIndex(ev);
 /*
     for(int i = 0; i < MAX_X*MAX_X; i++){
         for(int j = 0; j < MAX_X*MAX_X; j++){
@@ -473,11 +554,12 @@ int main(int argc, char *argv[])
         }
     }*/
 
+    /*
     plotHistogram(ev);
 
-        Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
-        my_plot2.plotGraph(my_graph);
-        my_plot2.displayPlot(true);
+    Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
+    my_plot2.plotGraph(my_graph);
+    my_plot2.displayPlot(true);
 
     for(int i = 0; i < ev.size(); i++){
         std::cout << ev[i] << ", ";
@@ -488,8 +570,20 @@ int main(int argc, char *argv[])
     } else {
         std::cout << "\nNo mode found." << std::endl;
     }
+    auto eigen_pairs_final = get_eigen_pairs(B_Matrix);
+    std::cout << "\n Vector 0 \n" << eigen_pairs_final[0].second << "\n";
+    std::cout << "\n Vector 1 \n" << eigen_pairs_final[1].second << "\n";
+    std::cout << "\n Vector 2 \n" << eigen_pairs_final[2].second << "\n";
+    std::cout << "\n Vector 3 \n" << eigen_pairs_final[3].second << "\n";
+    std::cout << "\n Vector 4 \n" << eigen_pairs_final[4].second << "\n";
+    std::cout << "\n Vector 5 \n" << eigen_pairs_final[5].second << "\n\n\n";
 
-        //plotHeatMap(eigen_pairs2[modeIndex].second, MAX_X);
+    plotHeatMap(eigen_pairs_final[0].second, MAX_X, "EV0");
+    plotHeatMap(eigen_pairs_final[1].second, MAX_X, "EV1");
+    plotHeatMap(eigen_pairs_final[2].second, MAX_X, "EV2");
+    plotHeatMap(eigen_pairs_final[3].second, MAX_X, "EV3");
+    */
+
     /*
     double freq{sqrt(chosenEigVal)};
     Force my_force(amp, freq, my_graph.nodes.size());
