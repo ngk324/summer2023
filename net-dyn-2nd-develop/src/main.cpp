@@ -12,8 +12,60 @@
 #include "include/Dynamics.hpp"
 #include "include/Force.hpp"
 
-
+/*
 // max
+double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev){
+    double d_var = 0; 
+
+    double h = stdev;
+
+    double printVal;
+
+    // loops through each element of lambda_j
+    for(int i = 1; i < values.size(); i++){
+        int index = i;
+        double maxVal;
+        int maxIndex;
+
+        // finds lambda_k that maximizes 
+        if(index != 1){
+            //maxVal = ((4*h*h)/values[1]) * (1/(pow(pow(sqrt(values[1])-sqrt(values[index]),2) + h * h, 2)));   
+            maxVal = ((4*h*h)/(values[index])) * (1/(pow(pow(sqrt(values[index])-sqrt(values[1]),2) + h * h, 2)));
+            maxIndex = 1;
+            //std::cout << " \nTest i,j " << i << " , " << 0 << " " << (a / (2 * values[1])) * exp(-b * (pow(values[1] - values[index],2)));
+            
+        }
+        else{
+            //maxVal = ((4*h*h)/values[2]) * (1/(pow(pow(sqrt(values[2])-sqrt(values[index]),2) + h * h, 2)));   
+            maxVal = ((4*h*h)/(values[index])) * (1/(pow(pow(sqrt(values[index])-sqrt(values[2]),2) + h * h, 2)));
+            maxIndex = 2;
+            //std::cout << " \nTest i,j " << i << " , " << 0 << " " << (a / (2 * values[1])) * exp(-b * (pow(values[1] - values[index],2)));
+            
+        }
+        for(int j = 0; j < values.size(); j++){
+            if(j != index && j != maxIndex){
+                //double testVal = ((4*h*h)/values[j]) * (1/(pow(pow(sqrt(values[j])-sqrt(values[index]),2) + h * h, 2))); 
+                double testVal = ((4*h*h)/(values[index])) * (1/(pow(pow(sqrt(values[index])-sqrt(values[j]),2) + h * h, 2)));
+                if(testVal > maxVal){
+                    maxVal = testVal;
+                    maxIndex = j;
+                }
+            }
+            //std::cout << " \nTest i,j " << i << " , " << j << " " << (a / (2 * values[j])) * exp(-b * (pow(values[j] - values[index],2)));
+        }
+        printVal = maxVal;
+        //std::cout << "Val " << maxVal << " Index " << maxIndex << "\n ";
+
+        double min_func_val = -((4 * h*h)/(sqrt(values[index])*pow(values[index],1.5))) * ((3 * values[index]- 4 * sqrt(values[maxIndex])*sqrt(values[index])+values[maxIndex]+h*h)/(pow(h*h+pow(sqrt(values[index])-sqrt(values[maxIndex]),2),3)));
+        d_var = d_var + min_func_val * (vki[i] * vki[i] + vkj[i]*vkj[i] - 2.0*vki[i]*vkj[i]);
+
+    }
+    //std::cout << "\nObj func: " << printVal;
+    return d_var;
+}
+*/
+
+// max with + k
 double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev){
     double d_var = 0; 
 
@@ -60,15 +112,14 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
         printVal = maxVal;
         //std::cout << "Val " << maxVal << " Index " << maxIndex << "\n ";
 
-        //double min_func_val = -((4 * h*h)/(sqrt(values[index] + k)*pow(values[index] + k,1.5))) * ((3 * values[index] + k- 4 * sqrt(values[maxIndex]+k)*sqrt(values[index]+k)+values[maxIndex]+k+h*h)/(pow(h*h+pow(sqrt(values[index]+k)-sqrt(values[maxIndex]+k),2),3)));
-        //double min_func_val = -((4 * h*h)/(sqrt(values[index])*pow(values[index],1.5))) * ((3 * values[index]- 4 * sqrt(values[maxIndex])*sqrt(values[index])+values[maxIndex]+h*h)/(pow(h*h+pow(sqrt(values[index])-sqrt(values[maxIndex]),2),3)));
-        double min_func_val = -((4 * h*h)/pow(values[index] + k,3.5)) * ((- pow(values[index]+k,1.5) * (h*h + pow(sqrt(values[index]+k)-sqrt(values[maxIndex]+k),2)) - 2 * pow(values[index]+k,2)*(sqrt(values[index]+k)-sqrt(values[maxIndex]+k))) / (pow(h*h + pow(sqrt(values[index]+k) - sqrt(values[maxIndex]+k),2),3)));
+        double min_func_val = -((4 * h*h)/(sqrt(values[index] + k)*pow(values[index] + k,1.5))) * ((3 * values[index] + k- 4 * sqrt(values[maxIndex]+k)*sqrt(values[index]+k)+values[maxIndex]+k+h*h)/(pow(h*h+pow(sqrt(values[index]+k)-sqrt(values[maxIndex]+k),2),3)));
         d_var = d_var + min_func_val * (vki[i] * vki[i] + vkj[i]*vkj[i] - 2.0*vki[i]*vkj[i]);
 
     }
     //std::cout << "\nObj func: " << printVal;
     return d_var;
 }
+
 
 /*
 // summation
@@ -505,7 +556,7 @@ int main(int argc, char *argv[])
             Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
             my_plot2.plotGraph(my_graph);
             my_plot2.displayPlot(true);
-            auto eigen_pairs_final = get_eigen_pairs(B_Matrix);
+            auto eigen_pairs_final = get_eigen_pairs(B_Matrix2);
             plotHeatMap(eigen_pairs_final[0].second, MAX_X, "EV0");
             plotHeatMap(eigen_pairs_final[1].second, MAX_X, "EV1");
             plotHeatMap(eigen_pairs_final[2].second, MAX_X, "EV2");
