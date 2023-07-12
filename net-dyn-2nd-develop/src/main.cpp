@@ -488,7 +488,7 @@ int main(int argc, char *argv[])
                         my_graph2.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + ep * dot_vec[counter];
                         my_graph2.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) + ep * dot_vec[counter];
                         if(my_graph2.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + ep * dot_vec[counter] < 0.0){
-                            std::cout << "\n" << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << " is negative " << my_graph2.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) << " + " << ep * dot_vec[counter] << "\n";
+                            //std::cout << "\n" << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << " is negative " << my_graph2.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) << " + " << ep * dot_vec[counter] << "\n";
                             neg_detected = true;
                             neg_index[counter] = 0;
                             neg_edge_counter++;
@@ -499,7 +499,9 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-            std::cout << "Number of negative edges :" << neg_edge_counter;
+            if(neg_edge_counter != 0){
+                std::cout << "\nNumber of negative edges :" << neg_edge_counter;
+            }
             if(neg_detected == false){
                 break;
             }
@@ -548,7 +550,7 @@ int main(int argc, char *argv[])
         B_Matrix = B_Matrix2;
         itCounter++;
     
-        if(itCounter % 100 == 0){
+        if(itCounter % 1000 == 0){
             plotHistogram(ev);
             Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
             my_plot2.plotGraph(my_graph);
