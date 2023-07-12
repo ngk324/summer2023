@@ -455,7 +455,6 @@ int main(int argc, char *argv[])
                 for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
                     if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){
                         if(neg_index[counter_neg_index] == 0){
-                            std::cout << "\nTest " << counter_neg_index <<"\n";
                             var_gradient.push_back(0);
                         }
                         else{
@@ -465,14 +464,7 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-            
-           /* int counter2 = 0;
-            for(int i = 0; i < my_graph.nodes.size(); i++){
-                for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
-                    neg_index[counter2] = 0;
-                }    
-            }
-        */
+
             
             double vec_dot_unit_norm = 0;
             std::vector<double> dot_vec;
@@ -486,6 +478,7 @@ int main(int argc, char *argv[])
                 dot_vec.push_back(var_gradient[i] - (vec_dot_unit_norm * (1.0/sqrt(var_gradient.size()))));
             }
 
+            int neg_edge_counter = 0;
             for(int i = 0; i < my_graph.nodes.size(); i++){
                 for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
                     /*if(my_graph.nodes[i]->isNeighbor(my_graph.nodes[j])){
@@ -498,7 +491,7 @@ int main(int argc, char *argv[])
                             std::cout << "\n" << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << " is negative " << my_graph2.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) << " + " << ep * dot_vec[counter] << "\n";
                             neg_detected = true;
                             neg_index[counter] = 0;
-                            std::cout << "\n Neg index counter " << counter << "\n";
+                            neg_edge_counter++;
                         }
                         //std::cout << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << ": " << (compute_var_grad(ev, mean, eigen_pairs[(*my_graph.nodes[i]).id].second, eigen_pairs[(*my_graph.nodes[i]->neighbors[j]).id].second)) << "\n";
                         //std::cout << ((*my_graph.nodes[i]).id) << ", " << (*my_graph.nodes[i]->neighbors[j]).id << " - " << dot_vec[counter] << "\n";
@@ -506,6 +499,7 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+            std::cout << "Number of negative edges :" << neg_edge_counter;
             if(neg_detected == false){
                 break;
             }
@@ -520,6 +514,12 @@ int main(int argc, char *argv[])
         std::vector<double> ev2;
         for (int i{0}; i < eigen_pairs2.size(); i++)
         {
+            if(i == 0){
+                std::cout << "\nMin EV: " << round(eigen_pairs2[i].first,4);
+            }
+            else if(i == eigen_pairs2.size() - 1){
+                std::cout << "\nMax EV: " << round(eigen_pairs2[i].first,4);
+            }
             ev2.push_back(round(eigen_pairs2[i].first,4));
             //std::cout << i << ": " << ev[i] << "\n";
         }
@@ -532,13 +532,10 @@ int main(int argc, char *argv[])
         for(int i = 0; i < my_graph.nodes.size(); i++){
             for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
                 edgeSum = edgeSum + my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id);
-                //if(itCounter % 50 == 0){
-                  //  std::cout << edgeSum << "   "; 
-               // }
             }    
         }
 
-        std::cout << "Trace: " << trace << " EdgeSum: " << edgeSum << "\n";
+        std::cout << "\nTrace: " << trace << " EdgeSum: " << edgeSum << "\n";
     
         //plotHistogram(ev2);
 
@@ -593,11 +590,11 @@ int main(int argc, char *argv[])
     Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
     my_plot2.plotGraph(my_graph);
     my_plot2.displayPlot(true);
-
+    */
     for(int i = 0; i < ev.size(); i++){
         std::cout << ev[i] << ", ";
     }
-
+/*
     if (modeIndex != -1) {
         std::cout << "\nMode Index: " << modeIndex << " Mode Value: " << ev[modeIndex] << std::endl;
     } else {
