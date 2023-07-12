@@ -116,7 +116,6 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
         d_var = d_var + min_func_val * (vki[i] * vki[i] + vkj[i]*vkj[i] - 2.0*vki[i]*vkj[i]);
 
     }
-    //std::cout << "\nObj func: " << printVal;
     return d_var;
 }
 
@@ -330,7 +329,7 @@ int findModeIndex(const std::vector<double>& nums) {
             modeIndex = i;
         }
     }
-    std::cout << "Mode FreqCount: " << maxFreq << "\n";
+    std::cout << "Mode FreqCount: " << maxFreq;
     return modeIndex;
 }
 
@@ -443,6 +442,7 @@ int main(int argc, char *argv[])
         }
         
         int counter_neg_index = 0;
+        int neg_edge_counter = 0;
 
         // loops through gradient descent iteration to prevent current iteration from causing negative edge weights
         while(true){
@@ -478,7 +478,7 @@ int main(int argc, char *argv[])
                 dot_vec.push_back(var_gradient[i] - (vec_dot_unit_norm * (1.0/sqrt(var_gradient.size()))));
             }
 
-            int neg_edge_counter = 0;
+            neg_edge_counter = 0;
             for(int i = 0; i < my_graph.nodes.size(); i++){
                 for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
                     /*if(my_graph.nodes[i]->isNeighbor(my_graph.nodes[j])){
@@ -500,7 +500,7 @@ int main(int argc, char *argv[])
                 }
             }
             if(neg_edge_counter != 0){
-                std::cout << "\nNumber of negative edges :" << neg_edge_counter;
+                std::cout << "\nNumber of negative edges: " << neg_edge_counter;
             }
             if(neg_detected == false){
                 break;
@@ -550,7 +550,7 @@ int main(int argc, char *argv[])
         B_Matrix = B_Matrix2;
         itCounter++;
     
-        if(itCounter % 1000 == 0){
+        if(itCounter % 1000 == 0 || neg_edge_counter == ev.size()){
             plotHistogram(ev);
             Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
             my_plot2.plotGraph(my_graph);
@@ -560,6 +560,9 @@ int main(int argc, char *argv[])
             plotHeatMap(eigen_pairs_final[1].second, MAX_X, "EV1");
             plotHeatMap(eigen_pairs_final[2].second, MAX_X, "EV2");
             plotHeatMap(eigen_pairs_final[3].second, MAX_X, "EV3");
+            if(neg_edge_counter == ev.size()){
+                break;
+            }
             std::cout << "Enter q to exit or press enter to continue: ";
             int a = getc(stdin);
             if(a ==113){
