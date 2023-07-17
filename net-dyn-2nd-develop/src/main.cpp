@@ -87,14 +87,14 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
         if(index != 0){ 
             //maxVal = ((4*h*h)/(values[index]+k)) * (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[0]+k),2) + h * h, 2)));
             maxVal = (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[0]+k),2) + h * h, 2)));
-            maxIndex = 1;
+            maxIndex = 0;
             //std::cout << " \nTest i,j " << i << " , " << 0 << " " << (a / (2 * values[1])) * exp(-b * (pow(values[1] - values[index],2)));
             
         }
         else{
             //maxVal = ((4*h*h)/(values[index]+k)) * (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[1]+k),2) + h * h, 2)));
             maxVal = (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[1]+k),2) + h * h, 2)));
-            maxIndex = 2;
+            maxIndex = 1;
             //std::cout << " \nTest i,j " << i << " , " << 0 << " " << (a / (2 * values[1])) * exp(-b * (pow(values[1] - values[index],2)));
             
         }
@@ -339,11 +339,11 @@ int main(int argc, char *argv[])
     }
 
     // calculates variance
-    double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
+    double meanInitial = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
 
     std::vector<double> diff(ev.size());
     std::transform(ev.begin(), ev.end(), diff.begin(),
-    std::bind2nd(std::minus<double>(), mean));
+    std::bind2nd(std::minus<double>(), meanInitial));
     double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
     double stdevInitial = std::sqrt(sq_sum / ev.size());
 
@@ -366,7 +366,7 @@ int main(int argc, char *argv[])
     while(exit == false){
         std::cout << "\n\nIteration: " << iteration_counter; 
 
-        mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
+        double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
 
         std::vector<double> diff1(ev.size());
         std::transform(ev.begin(), ev.end(), diff1.begin(),
@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
         // temp graph to for when checking if edge becomes negative during gradient descent iteration
         Graph my_graph2 = my_graph;
         
-        //double ep = .001 / sqrt(2*(MAX_X*MAX_X) - 2 * MAX_X);
+        //double ep = .01 / sqrt(2*(MAX_X*MAX_X) - 2 * MAX_X);
         double ep = 10;
 
         // creates vector to hold location of index that gradient should be forced to 0 to prevent negative edge weights
@@ -521,7 +521,7 @@ int main(int argc, char *argv[])
         }
     }
     // print final variance, mode properties and eigenvalues
-    mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
+    double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
 
     std::vector<double> diff2(ev.size());
     std::transform(ev.begin(), ev.end(), diff2.begin(),
