@@ -65,7 +65,7 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
 }
 */
 
-
+/*
 // max with + k
 double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev){
     double d_var = 0; 
@@ -85,23 +85,23 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
 
         // finds lambda_k that maximizes 
         if(index != 0){ 
-            //maxVal = ((4*h*h)/(values[index]+k)) * (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[0]+k),2) + h * h, 2)));
-            maxVal = (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[0]+k),2) + h * h, 2)));
+            maxVal = ((4*h*h)/(values[index]+k)) * (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[0]+k),2) + h * h, 2)));
+            //maxVal = (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[0]+k),2) + h * h, 2)));
             maxIndex = 0;
             //std::cout << " \nTest i,j " << i << " , " << 0 << " " << (a / (2 * values[1])) * exp(-b * (pow(values[1] - values[index],2)));
             
         }
         else{
-            //maxVal = ((4*h*h)/(values[index]+k)) * (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[1]+k),2) + h * h, 2)));
-            maxVal = (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[1]+k),2) + h * h, 2)));
+            maxVal = ((4*h*h)/(values[index]+k)) * (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[1]+k),2) + h * h, 2)));
+            //maxVal = (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[1]+k),2) + h * h, 2)));
             maxIndex = 1;
             //std::cout << " \nTest i,j " << i << " , " << 0 << " " << (a / (2 * values[1])) * exp(-b * (pow(values[1] - values[index],2)));
             
         }
         for(int j = 0; j < values.size(); j++){
             if(j != index && j != maxIndex){
-                //double testVal = ((4*h*h)/(values[index]+k)) * (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[j]+k),2) + h * h, 2)));
-                double testVal = (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[j]+k),2) + h * h, 2)));
+                double testVal = ((4*h*h)/(values[index]+k)) * (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[j]+k),2) + h * h, 2)));
+                //double testVal = (1/(pow(pow(sqrt(values[index]+k)-sqrt(values[j]+k),2) + h * h, 2)));
                 if(testVal > maxVal){
                     maxVal = testVal;
                     maxIndex = j;
@@ -112,14 +112,65 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
         printVal = maxVal;
         //std::cout << "Val " << maxVal << " Index " << maxIndex << "\n ";
 
-        //double min_func_val = -((4 * h*h)/(sqrt(values[index] + k)*pow(values[index] + k,1.5))) * ((3 * values[index] + k- 4 * sqrt(values[maxIndex]+k)*sqrt(values[index]+k)+values[maxIndex]+k+h*h)/(pow(h*h+pow(sqrt(values[index]+k)-sqrt(values[maxIndex]+k),2),3)));
-        double min_func_val = -(1/sqrt(values[index] + k)) * ((2 * (sqrt(values[index]+k)-sqrt(values[maxIndex]+k)))/(pow(h*h+pow(sqrt(values[index]+k)-sqrt(values[maxIndex]+k),2),3)));
+        double min_func_val = -((4 * h*h)/(sqrt(values[index] + k)*pow(values[index] + k,1.5))) * ((3 * values[index] + k- 4 * sqrt(values[maxIndex]+k)*sqrt(values[index]+k)+values[maxIndex]+k+h*h)/(pow(h*h+pow(sqrt(values[index]+k)-sqrt(values[maxIndex]+k),2),3)));
+        //double min_func_val = -(1/sqrt(values[index] + k)) * ((2 * (sqrt(values[index]+k)-sqrt(values[maxIndex]+k)))/(pow(h*h+pow(sqrt(values[index]+k)-sqrt(values[maxIndex]+k),2),3)));
         d_var = d_var + min_func_val * (vki[i] * vki[i] + vkj[i]*vkj[i] - 2.0*vki[i]*vkj[i]);
 
     }
     //std::cout << "\nObj func: " << d_var;
     return d_var;
 }
+*/
+
+
+// double max
+double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev){
+    double d_var = 0; 
+
+    double h = stdev;
+
+    double printVal;
+    
+    int maxIndexK = 1;
+    int maxIndexJ = 0;
+    double maxVal = ((4*h*h)) * (1/(pow(pow(sqrt(values[maxIndexJ])-sqrt(values[maxIndexK]),2) + h * h, 2)));
+    double k = 0.0;
+    // loops through each element of lambda_j
+    for(int i = 0; i < values.size(); i++){
+
+        //h = h * values[index];
+
+        // finds lambda_k that maximizes 
+        for(int j = 0; j < values.size(); j++){
+            if(j != i){
+                double testVal = ((4*h*h)) * (1/(pow(pow(sqrt(values[i])-sqrt(values[j]),2) + h * h, 2)));
+                if(testVal > maxVal){
+                    maxVal = testVal;
+                    maxIndexK = j;
+                    maxIndexJ = i;
+                }
+            }
+            //std::cout << " \nTest i,j " << i << " , " << j << " " << (a / (2 * values[j])) * exp(-b * (pow(values[j] - values[index],2)));
+        }
+        printVal = maxVal;
+        //std::cout << "Val " << maxVal << " Index " << maxIndex << "\n ";
+    }
+    //double min_func_val = -((4 * h*h)/(sqrt(values[maxIndexJ] + k)*pow(values[maxIndexJ] + k,1.5))) * ((3 * values[maxIndexJ] + k- 4 * sqrt(values[maxIndexK]+k)*sqrt(values[maxIndexJ]+k)+values[maxIndexK]+k+h*h)/(pow(h*h+pow(sqrt(values[maxIndexJ]+k)-sqrt(values[maxIndexK]+k),2),3)));
+    //double min_func_val = -(1/sqrt(values[maxIndexJ] + k)) * ((2 * (sqrt(values[maxIndexJ]+k)-sqrt(values[maxIndexK]+k)))/(pow(h*h+pow(sqrt(values[maxIndexJ]+k)-sqrt(values[maxIndexK]+k),2),3)));
+    double min_func_val;
+    if((sqrt(values[maxIndexJ])-sqrt(values[maxIndexK])) != 0){
+        min_func_val = -(1000*(8*h*h*(sqrt(values[maxIndexJ])-sqrt(values[maxIndexK])))/(pow(h*h+pow(sqrt(values[maxIndexJ])-sqrt(values[maxIndexK]),2),3)));
+    }
+    else{
+        min_func_val = -(1000*(8*h*h*(sqrt(values[maxIndexJ]+.1)-sqrt(values[maxIndexK])))/(pow(h*h+pow(sqrt(values[maxIndexJ])-sqrt(values[maxIndexK]),2),3)));
+    }
+    d_var = min_func_val * (vki[maxIndexJ] * vki[maxIndexJ] + vkj[maxIndexJ]*vkj[maxIndexJ] - 2.0*vki[maxIndexJ]*vkj[maxIndexJ]);
+    //std::cout << "\nObj func: " << d_var;
+    //std::cout << "\nMax Indices " << maxIndexJ << " " << maxIndexK << " " << values[maxIndexJ] << " " << values[maxIndexK] << " " << (1/(pow(pow(sqrt(values[maxIndexJ])-sqrt(values[maxIndexK]),2) + h * h, 2))) << " " << maxVal << " " << d_var;
+    return d_var;
+}
+
+
 
 
 
@@ -382,7 +433,7 @@ int main(int argc, char *argv[])
         // temp graph to for when checking if edge becomes negative during gradient descent iteration
         Graph my_graph2 = my_graph;
         
-        //double ep = .01 / sqrt(2*(MAX_X*MAX_X) - 2 * MAX_X);
+        //double ep = .001 / sqrt(2*(MAX_X*MAX_X) - 2 * MAX_X);
         double ep = 10;
 
         // creates vector to hold location of index that gradient should be forced to 0 to prevent negative edge weights
@@ -498,7 +549,7 @@ int main(int argc, char *argv[])
         B_Matrix = B_Matrix2;
         iteration_counter++;
         
-        int N = 100;
+        int N = 500;
         // display eigenvalue spectrum, final updated graph, and first 4 eigenvectors every N iterations or until can't compute gradient further
         if(iteration_counter % N == 0 || neg_edge_counter == ev.size()){
             plotHistogram(ev);
