@@ -1,9 +1,10 @@
 #include "Graph.hpp"
 #include <iostream>
 
-void Graph::constructSimpleGraph(int x, int y)
+void Graph::constructSimpleGraph(const int x, const int y)
 {
 
+    // Randomly assign some state value and generate nodes
     srand(time(NULL));
     int idx{0};
     for (int i{0}; i < x; i++)
@@ -16,6 +17,7 @@ void Graph::constructSimpleGraph(int x, int y)
             idx++;
         }
     }
+    // Establish connections between nodes based on distance
     for (int i{0}; i < nodes.size(); i++)
     {
         for (int j{i + 1}; j < nodes.size(); j++)

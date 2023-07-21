@@ -14,7 +14,7 @@ double Node::getDist(const Node &n) const
 }
 double Node::isNear(const Node &n) const
 {
-    return this->getDist(n) < sqrt(2);
+    return getDist(n) < sqrt(2);
 }
 
 bool Node::isNeighbor(const std::shared_ptr<Node> n) const
