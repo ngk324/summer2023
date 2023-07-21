@@ -11,13 +11,13 @@ public:
     std::vector<std::shared_ptr<Node>> nodes;
     Eigen::MatrixXf adjacencyMatrix, degreeMatrix, laplacianMatrix;
 
-    void constructSimpleGraph(int x, int y);
+    void constructSimpleGraph(const int x, const int y);
 
     void computeMatrices();
 
     void computeMatrices2();
 
-    void simulateDynamics(int tMax);
+    void simulateDynamics(const int tMax);
 
     void calc_grad_descent();
 };

@@ -8,8 +8,8 @@ class Node
 {
 private:
 public:
-    int x, y; // Coordinates (just for plotting)
-    int id;
+    const int x, y; // Coordinates (just for plotting)
+    const int id;
     std::vector<std::shared_ptr<Node>> neighbors;
     double z;     // State
     double z_old; // Previous state (for discrete time computations)
@@ -22,7 +22,7 @@ public:
     double getDist(const Node &n) const;
     double isNear(const Node &n) const;
 
-    bool isNeighbor(std::shared_ptr<Node> n) const;
+    bool isNeighbor(const std::shared_ptr<Node> n) const;
 
     void print(const std::string head) const;
 };

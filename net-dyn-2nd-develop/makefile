@@ -53,3 +53,11 @@ main:
 		$@,\
 		$(CC) $(CFLAGS) $(WARNS) $(INC_LOCAL) -o $(BIN_FOLDER)/$@ $(SRC_FOLDER)/$@.cpp $(MAIN_HEADERS) $(LIB_FOLDERS) $(LIBS) $(LIBS_OPENCV)\
 	)
+
+.PHONY: alt
+alt:
+	@printf "\nNow compiling '$(_BLUE)$@$(_CLEAR)'...\n";
+	@$(call COMPILE_PROGRAM,\
+		$@,\
+		$(CC) $(CFLAGS) $(WARNS) $(INC_LOCAL) -o $(BIN_FOLDER)/$@ $(SRC_FOLDER)/$@.cpp $(MAIN_HEADERS) $(LIB_FOLDERS) $(LIBS) $(LIBS_OPENCV)\
+	)
