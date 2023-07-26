@@ -12,6 +12,74 @@
 #include "include/Dynamics.hpp"
 #include "include/Force.hpp"
 
+#include <iostream>
+#include <vector>
+
+void plot1DPointsStraight(const std::vector<double>& values, int point1, int point2, int width = 800*1.5, int height = 600*1.5) {
+    if (values.empty()) {
+        std::cout << "Error: The input vector is empty." << std::endl;
+        return;
+    }
+
+    // Find the mini and max values 
+    double min_val = *std::min_element(values.begin(), values.end());
+    double max_val = *std::max_element(values.begin(), values.end());
+
+    cv::Mat plot_image(height, width, CV_8UC3, cv::Scalar(255, 255, 255));
+
+    double scale_x = static_cast<double>(width/max_val);
+
+    // Plot the points
+    for (size_t i = 0; i < values.size(); ++i) {
+        int x = static_cast<int>(values[i] * scale_x);
+        int y = static_cast<int>(height / 2);
+        if(i == point1){
+            cv::circle(plot_image, cv::Point(x, y), 3, cv::Scalar(0, 255, 0), -1);
+        }
+        else if(i == point2){
+            cv::circle(plot_image, cv::Point(x, y), 3, cv::Scalar(0, 0, 255), -1);
+        }
+        else{
+            cv::circle(plot_image, cv::Point(x, y), 3, cv::Scalar(0, 0, 0), -1);
+        }
+    }
+
+    cv::imshow("1D Plot", plot_image);
+    cv::waitKey(0);
+}
+
+void plot1DPointsCurved(const std::vector<double>& values, int point1, int point2, int width = 800*1.5, int height = 600*1.5) {
+    if (values.empty()) {
+        std::cout << "Error: The input vector is empty." << std::endl;
+        return;
+    }
+
+    // Find the minimum and maximum values
+    double min_val = *std::min_element(values.begin(), values.end());
+    double max_val = *std::max_element(values.begin(), values.end());
+    cv::Mat plot_image(height, width, CV_8UC3, cv::Scalar(255, 255, 255));
+
+    double scale_x = static_cast<double>(width) / (values.size() - 1);
+    double scale_y = static_cast<double>(height) / (max_val - min_val);
+
+    // Plot the points
+    for (size_t i = 0; i < values.size(); ++i) {
+        int x = static_cast<int>(i * scale_x);
+        int y = static_cast<int>((max_val - values[i]) * scale_y);
+        if(i == point1){
+            cv::circle(plot_image, cv::Point(x, y), 3, cv::Scalar(0, 255, 0), -1);
+        }
+        else if(i == point2){
+            cv::circle(plot_image, cv::Point(x, y), 3, cv::Scalar(0, 0, 255), -1);
+        }
+        else{
+            cv::circle(plot_image, cv::Point(x, y), 3, cv::Scalar(0, 0, 0), -1);
+        }
+    }
+    cv::imshow("1D Plot", plot_image);
+    cv::waitKey(0);
+}
+
 /*
 // max
 double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev){
@@ -124,15 +192,15 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
 
 
 // double max
-double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev){
+double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev, bool print){
     double d_var = 0; 
 
     double h = stdev;
 
     double printVal;
     
-    int maxIndexK = 1;
-    int maxIndexJ = 0;
+    int maxIndexK = 0;
+    int maxIndexJ = 1;
     double maxVal = ((4*h*h)) * (1/(pow(pow(sqrt(values[maxIndexJ])-sqrt(values[maxIndexK]),2) + h * h, 2)));
     double k = 0.0;
     // loops through each element of lambda_j
@@ -157,22 +225,28 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
     }
     //double min_func_val = -((4 * h*h)/(sqrt(values[maxIndexJ] + k)*pow(values[maxIndexJ] + k,1.5))) * ((3 * values[maxIndexJ] + k- 4 * sqrt(values[maxIndexK]+k)*sqrt(values[maxIndexJ]+k)+values[maxIndexK]+k+h*h)/(pow(h*h+pow(sqrt(values[maxIndexJ]+k)-sqrt(values[maxIndexK]+k),2),3)));
     //double min_func_val = -(1/sqrt(values[maxIndexJ] + k)) * ((2 * (sqrt(values[maxIndexJ]+k)-sqrt(values[maxIndexK]+k)))/(pow(h*h+pow(sqrt(values[maxIndexJ]+k)-sqrt(values[maxIndexK]+k),2),3)));
-    double min_func_val;
-    if((sqrt(values[maxIndexJ])-sqrt(values[maxIndexK])) != 0){
-        min_func_val = -(1000*(8*h*h*(sqrt(values[maxIndexJ])-sqrt(values[maxIndexK])))/(pow(h*h+pow(sqrt(values[maxIndexJ])-sqrt(values[maxIndexK]),2),3)));
+    double min_func_val_j, min_func_val_k;
+    if((abs(values[maxIndexJ]-values[maxIndexK])) > 0.0002){
+        min_func_val_j = -((8*h*h*(-sqrt(values[maxIndexK])+sqrt(values[maxIndexJ])))/(sqrt(values[maxIndexJ])*pow(h*h+pow(-sqrt(values[maxIndexK])+sqrt(values[maxIndexJ]),2),3)));
+        min_func_val_k = ((8*h*h*(-sqrt(values[maxIndexK])+sqrt(values[maxIndexJ])))/(sqrt(values[maxIndexK])*pow(h*h+pow(-sqrt(values[maxIndexK])+sqrt(values[maxIndexJ]),2),3)));
+        //min_func_val = ((4 * h*h)/(sqrt(values[maxIndexJ])*pow(values[maxIndexJ],1.5))) * ((-3 * values[maxIndexJ] + 4 * sqrt(values[maxIndexK])*sqrt(values[maxIndexJ])-values[maxIndexK]-h*h)/(pow(h*h-pow(sqrt(values[maxIndexJ])+sqrt(values[maxIndexK]),2),3)));
+
     }
     else{
-        min_func_val = -(1000*(8*h*h*(sqrt(values[maxIndexJ]+.1)-sqrt(values[maxIndexK])))/(pow(h*h+pow(sqrt(values[maxIndexJ])-sqrt(values[maxIndexK]),2),3)));
+        min_func_val_j = -((8*h*h*(-sqrt(values[maxIndexK]+.1)+sqrt(values[maxIndexJ])))/(sqrt(values[maxIndexJ])*pow(h*h+pow(-sqrt(values[maxIndexK])+sqrt(values[maxIndexJ]),2),3)));
+        min_func_val_k = ((8*h*h*(-sqrt(values[maxIndexK]+.1)+sqrt(values[maxIndexJ])))/(sqrt(values[maxIndexK])*pow(h*h+pow(-sqrt(values[maxIndexK])+sqrt(values[maxIndexJ]),2),3)));
+        //min_func_val = ((4 * h*h)/(sqrt(values[maxIndexJ])*pow(values[maxIndexJ],1.5))) * ((-3 * values[maxIndexJ] + 4 * sqrt(values[maxIndexK])*sqrt(values[maxIndexJ])-values[maxIndexK]-h*h)/(pow(h*h-pow(sqrt(values[maxIndexJ])+sqrt(values[maxIndexK]),2),3)));
+
     }
-    d_var = min_func_val * (vki[maxIndexJ] * vki[maxIndexJ] + vkj[maxIndexJ]*vkj[maxIndexJ] - 2.0*vki[maxIndexJ]*vkj[maxIndexJ]);
-    //std::cout << "\nObj func: " << d_var;
+    d_var = (min_func_val_j * (vki[maxIndexJ] * vki[maxIndexJ] + vkj[maxIndexJ]*vkj[maxIndexJ] - 2.0*vki[maxIndexJ]*vkj[maxIndexJ])) - (min_func_val_k * (vki[maxIndexK] * vki[maxIndexK] + vkj[maxIndexK]*vkj[maxIndexK] - 2.0*vki[maxIndexK]*vkj[maxIndexK]));
     //std::cout << "\nMax Indices " << maxIndexJ << " " << maxIndexK << " " << values[maxIndexJ] << " " << values[maxIndexK] << " " << (1/(pow(pow(sqrt(values[maxIndexJ])-sqrt(values[maxIndexK]),2) + h * h, 2))) << " " << maxVal << " " << d_var;
+    if(print == true){
+        std::cout << "\nMax Indices " << maxIndexJ << " " << maxIndexK << " " << values[maxIndexJ] << " " << values[maxIndexK];    
+        std::cout << "\nObj func: " << maxVal;    
+        //plot1DPointsCurved(values, maxIndexJ, maxIndexK);
+    }
     return d_var;
 }
-
-
-
-
 
 
 // rounds to 4 decimal places
@@ -242,10 +316,10 @@ void plotHeatMap(Eigen::Matrix<float, -1, 1> arr, int size, char* name)
     //cv::destroyAllWindows();
 }
 
-
+/*
 void plotHistogram(const std::vector<double>& values)
 {
-    double bins = 15.0;
+    double bins = 20.0;
     // Find the minimum and maximum values in the vector
     double minValue = *std::min_element(values.begin(), values.end());
     double maxValue = *std::max_element(values.begin(), values.end());
@@ -264,21 +338,154 @@ void plotHistogram(const std::vector<double>& values)
 
     // Create a histogram visualization image
     int histWidth = 512, histHeight = 400;
-    cv::Mat histImage(histHeight, histWidth, CV_8UC3, cv::Scalar(255, 255, 255));
+    int histWidth2 = histWidth*1.25,histHeight2 = histHeight *1.25;
+    cv::Mat histImage(histHeight2, histWidth2, CV_8UC3, cv::Scalar(255, 255, 255));
 
     // Draw the histogram bars
     int binWidth = cvRound(static_cast<double>(histWidth) / bins);
     for (int i = 0; i < bins; i++) {
         int barHeight = cvRound(static_cast<double>(histogram[i]) / maxFrequency * histHeight);
-        cv::rectangle(histImage, cv::Point(i * binWidth, histHeight), cv::Point((i + 1) * binWidth, histHeight - barHeight), cv::Scalar(0, 0, 0), -1);
+        cv::rectangle(histImage, cv::Point(i * binWidth + ((histWidth2-histWidth)/2), histHeight + ((histHeight2-histHeight)/2)), cv::Point((i + 1) * binWidth + ((histWidth2-histWidth)/2), histHeight + ((histHeight2-histHeight)/2) - barHeight), cv::Scalar(0, 0, 0), -1);
+
+        // Add bin values to the x-axis of the graph
+        std::ostringstream binValue;
+        binValue << std::fixed << std::setprecision(1) << minValue + binSize * i;
+        cv::putText(histImage, binValue.str(), cv::Point(i * binWidth + ((histWidth2-histWidth)/2), histHeight2 - 10), cv::FONT_HERSHEY_SIMPLEX, 0.3, cv::Scalar(0, 0, 0), 1, cv::LINE_AA);
+    }
+
+    // Add a scale to the y-axis to show bin height
+    for (int i = 0; i <= 10; i += 2) {
+        int y = histHeight2 - cvRound(static_cast<double>(i) / 10 * histHeight) - ((histHeight2-histHeight)/2);
+        cv::putText(histImage, std::to_string(i * maxFrequency / 10), cv::Point(5, y), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 0, 0), 1, cv::LINE_AA);
+        // Draw the dotted lines
+        cv::Point pt1(30, y);
+        cv::Point pt2(histWidth2 - 30, y);
+        cv::line(histImage, pt1, pt2, cv::Scalar(200, 200, 200), 1, cv::LINE_4);
     }
 
     // Create a window and display the histogram
     cv::namedWindow("Histogram", cv::WINDOW_NORMAL);
     cv::imshow("Histogram", histImage);
     cv::waitKey(0);
-    //cv::destroyAllWindows();
+    cv::destroyAllWindows();
+}*/
+
+void plotHistogram(const std::vector<double>& values, int maxFrequency, int itNum)
+{
+    double bins = 60.0;
+    // Find the minimum and maximum values in the vector
+    double minValue = 0;
+    double maxValue = 60;
+    //double minValue = *std::min_element(values.begin(), values.end());
+    //double maxValue = *std::max_element(values.begin(), values.end());
+
+    // Calculate the histogram
+    std::vector<int> histogram(bins, 0);
+    float binSize = static_cast<float>(maxValue - minValue + .1) / bins;
+
+    for (double value : values) {
+        int binIndex = static_cast<int>((value - minValue) / binSize);
+        histogram[binIndex]++;
+    }
+
+    // Find the maximum frequency in the histogram
+    //int maxFrequency = *std::max_element(histogram.begin(), histogram.end());
+
+    // Create a histogram visualization image
+    int histWidth = 512*2, histHeight = 400*2;
+    int histWidth2 = histWidth*1.25,histHeight2 = histHeight *1.25;
+    cv::Mat histImage(histHeight2, histWidth2, CV_8UC3, cv::Scalar(255, 255, 255));
+
+    // Draw the histogram bars
+    int binWidth = cvRound(static_cast<double>(histWidth) / bins);
+    for (int i = 0; i < bins; i++) {
+        int barHeight = cvRound(static_cast<double>(histogram[i]) / maxFrequency * histHeight);
+        cv::rectangle(histImage, cv::Point(i * binWidth + ((histWidth2-histWidth)/2), histHeight + ((histHeight2-histHeight)/2)), cv::Point((i + 1) * binWidth + ((histWidth2-histWidth)/2), histHeight + ((histHeight2-histHeight)/2) - barHeight), cv::Scalar(0, 0, 0), -1);
+
+        // Add bin values to the x-axis of the graph
+        std::ostringstream binValue;
+        binValue << std::fixed << std::setprecision(0) << minValue + binSize * i;
+        cv::putText(histImage, binValue.str(), cv::Point(i * binWidth + ((histWidth2-histWidth)/2), histHeight2 - 10), cv::FONT_HERSHEY_SIMPLEX, 0.2, cv::Scalar(0, 0, 0), 1, cv::LINE_AA);
+    }
+
+    // Add a scale to the y-axis to show bin height
+    for (int i = 0; i <= 10; i += 2) {
+        int y = histHeight2 - cvRound(static_cast<double>(i) / 10 * histHeight) - ((histHeight2-histHeight)/2);
+        cv::putText(histImage, std::to_string(i * maxFrequency / 10), cv::Point(5, y), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 0, 0), 1, cv::LINE_AA);
+        // Draw the dotted lines
+        cv::Point pt1(30, y);
+        cv::Point pt2(histWidth2 - 30, y);
+        cv::line(histImage, pt1, pt2, cv::Scalar(200, 200, 200), 1, cv::LINE_4);
+    }
+
+    // Create a window and display the histogram
+    cv::namedWindow("Histogram", cv::WINDOW_NORMAL);
+    cv::imshow("Histogram", histImage);
+    std::__cxx11::basic_string<char> name = "tests/Iteration_scaling_"+std::to_string(itNum) + ".jpg";
+    cv::imwrite(name, histImage);  
+    cv::waitKey(0);
+    cv::destroyAllWindows();
 }
+
+int plotHistogramFirst(const std::vector<double>& values, int itNum)
+{
+    double bins = 60;
+    // Find the minimum and maximum values in the vector
+    double minValue = 0;
+    double maxValue = 60;
+    //double minValue = *std::min_element(values.begin(), values.end());
+    //double maxValue = *std::max_element(values.begin(), values.end());
+
+    // Calculate the histogram
+    std::vector<int> histogram(bins, 0);
+    float binSize = static_cast<float>(maxValue - minValue + .1) / bins;
+
+    for (double value : values) {
+        int binIndex = static_cast<int>((value - minValue) / binSize);
+        histogram[binIndex]++;
+    }
+
+    // Find the maximum frequency in the histogram
+    int maxFrequency = *std::max_element(histogram.begin(), histogram.end());
+
+    // Create a histogram visualization image
+    int histWidth = 512*2, histHeight = 400*2;
+    int histWidth2 = histWidth*1.25,histHeight2 = histHeight *1.25;
+    cv::Mat histImage(histHeight2, histWidth2, CV_8UC3, cv::Scalar(255, 255, 255));
+
+    // Draw the histogram bars
+    int binWidth = cvRound(static_cast<double>(histWidth) / bins);
+    for (int i = 0; i < bins; i++) {
+        int barHeight = cvRound(static_cast<double>(histogram[i]) / maxFrequency * histHeight);
+        cv::rectangle(histImage, cv::Point(i * binWidth + ((histWidth2-histWidth)/2), histHeight + ((histHeight2-histHeight)/2)), cv::Point((i + 1) * binWidth + ((histWidth2-histWidth)/2), histHeight + ((histHeight2-histHeight)/2) - barHeight), cv::Scalar(0, 0, 0), -1);
+
+        // Add bin values to the x-axis of the graph
+        std::ostringstream binValue;
+        binValue << std::fixed << std::setprecision(0) << minValue + binSize * i;
+        cv::putText(histImage, binValue.str(), cv::Point(i * binWidth + ((histWidth2-histWidth)/2), histHeight2 - 10), cv::FONT_HERSHEY_SIMPLEX, 0.2, cv::Scalar(0, 0, 0), 1, cv::LINE_AA);
+    }
+
+    // Add a scale to the y-axis to show bin height
+    for (int i = 0; i <= 10; i += 2) {
+        int y = histHeight2 - cvRound(static_cast<double>(i) / 10 * histHeight) - ((histHeight2-histHeight)/2);
+        cv::putText(histImage, std::to_string(i * maxFrequency / 10), cv::Point(5, y), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 0, 0), 1, cv::LINE_AA);
+        // Draw the dotted lines
+        cv::Point pt1(30, y);
+        cv::Point pt2(histWidth2 - 30, y);
+        cv::line(histImage, pt1, pt2, cv::Scalar(200, 200, 200), 1, cv::LINE_4);
+    }
+
+    // Create a window and display the histogram
+    cv::namedWindow("Histogram", cv::WINDOW_NORMAL);
+    cv::imshow("Histogram", histImage);
+    std::__cxx11::basic_string<char> name = "tests/Iteration_scaling"+std::to_string(itNum) + ".jpg";
+    cv::imwrite(name, histImage);  
+    cv::waitKey(0);
+    cv::destroyAllWindows();
+    return maxFrequency;
+}
+
+
 
 // get eigen pair with first float being eigenvalue and second Eigen::VectorXf being eigenvectors
 std::vector<std::pair<float, Eigen::VectorXf>> get_eigen_pairs(Eigen::MatrixXf &matrix)
@@ -390,40 +597,40 @@ int main(int argc, char *argv[])
     }
 
     // calculates variance
-    double meanInitial = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
+    double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
 
     std::vector<double> diff(ev.size());
     std::transform(ev.begin(), ev.end(), diff.begin(),
-    std::bind2nd(std::minus<double>(), meanInitial));
+    std::bind2nd(std::minus<double>(), mean));
     double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-    double stdevInitial = std::sqrt(sq_sum / ev.size());
+    double stdev = std::sqrt(sq_sum / ev.size());
 
-    std::cout << "\n" << "Variance : " << stdevInitial * stdevInitial << "\n";
+    std::cout << "\n" << "Variance : " << stdev * stdev << "\n";
 
     //prints heatmap of mode eigenvector
     chosenEigVal = eigen_pairs[modeIndex].first;
-    plotHistogram(ev);
-    plotHeatMap(eigen_pairs[modeIndex].second, MAX_X,"Mode EV");
-    
+    int maxFreq = plotHistogramFirst(ev,0);
+    //plotHeatMap(eigen_pairs[modeIndex].second, MAX_X,"Mode EV");
+
     // Generate plot
     Plot my_plot("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
     my_plot.plotGraph(my_graph);
     my_plot.displayPlot(true);
 
     // while loop to for each iteration of gradient decent
-    int iteration_counter = 0;
+    int iteration_counter = 1;
     bool exit = false;
     auto eigen_pairs2 = get_eigen_pairs_transpose(B_Matrix);
     while(exit == false){
         std::cout << "\n\nIteration: " << iteration_counter; 
 
-        double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
+        mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
 
         std::vector<double> diff1(ev.size());
         std::transform(ev.begin(), ev.end(), diff1.begin(),
         std::bind2nd(std::minus<double>(), mean));
         sq_sum = std::inner_product(diff1.begin(), diff1.end(), diff1.begin(), 0.0);
-        double stdev = std::sqrt(sq_sum / ev.size());
+        stdev = std::sqrt(sq_sum / ev.size());
 
         std::cout << "\nStarting Variance: " << stdev * stdev << "\n";
         modeIndex = findModeIndex(ev);
@@ -433,8 +640,8 @@ int main(int argc, char *argv[])
         // temp graph to for when checking if edge becomes negative during gradient descent iteration
         Graph my_graph2 = my_graph;
         
-        //double ep = .001 / sqrt(2*(MAX_X*MAX_X) - 2 * MAX_X);
-        double ep = 10;
+        double ep = .1 / sqrt(2*(MAX_X*MAX_X) - 2 * MAX_X);
+        //double ep = 100;
 
         // creates vector to hold location of index that gradient should be forced to 0 to prevent negative edge weights
         std::vector<int> neg_index;
@@ -446,7 +653,6 @@ int main(int argc, char *argv[])
         
         int counter_edge_index = 0;
         int neg_edge_counter = 0;
-
         // loops through gradient descent iteration to prevent current iteration from causing negative edge weights
         while(true){
             int counter = 0;
@@ -462,7 +668,7 @@ int main(int argc, char *argv[])
                             var_gradient.push_back(0);
                         }
                         else{
-                            var_gradient.push_back(compute_var_grad(ev, eigen_pairs[(*my_graph.nodes[i]).id].second, eigen_pairs[(*my_graph.nodes[i]->neighbors[j]).id].second, stdevInitial));
+                            var_gradient.push_back(compute_var_grad(ev, eigen_pairs[(*my_graph.nodes[i]).id].second, eigen_pairs[(*my_graph.nodes[i]->neighbors[j]).id].second, stdev, false));
                         }
                         counter_edge_index++;     
                     }
@@ -471,8 +677,10 @@ int main(int argc, char *argv[])
 
             // calculates gradient vector projection
             double vec_dot_unit_norm = 0;
-            std::vector<double> dot_vec;
 
+            std::vector<double> dot_vec = var_gradient;
+/*
+            std::vector<double> dot_vec;
             for(int i = 0; i < var_gradient.size(); i++){
                 //std::cout << "\n Index " << i << " grad " << var_gradient[i] << "\n";
                 vec_dot_unit_norm = vec_dot_unit_norm + (var_gradient[i] * (1.0/sqrt(var_gradient.size())));
@@ -481,15 +689,21 @@ int main(int argc, char *argv[])
             for(int i = 0; i < var_gradient.size(); i++){
                 dot_vec.push_back(var_gradient[i] - (vec_dot_unit_norm * (1.0/sqrt(var_gradient.size()))));
             }
-
+*/
+            double AdaGrad_ep = 0;
+            for(int x = 0; x < dot_vec.size(); x++){
+                AdaGrad_ep = AdaGrad_ep + dot_vec[x]*dot_vec[x];
+            }
+            //double AdaGrad_ep = sqrt(std::inner_product(dot_vec.begin(), dot_vec.end(), dot_vec.begin(), 0 ));
+            std::cout << "\nAdagrad: " << AdaGrad_ep << " " << dot_vec[0] << " " << dot_vec[1] << " " << dot_vec[dot_vec.size()-1];
             // updates edge weights from gradient vector. If edge weights become negative, index is saved and gradient descent is performed again, with that gradient being 0
             neg_edge_counter = 0;
             for(int i = 0; i < my_graph.nodes.size(); i++){
                 for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
                     if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){
-                        my_graph2.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + ep * dot_vec[counter];
-                        my_graph2.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) + ep * dot_vec[counter];
-                        if(my_graph2.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + ep * dot_vec[counter] < 0.001){
+                        my_graph2.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + (ep/(.00000001 + AdaGrad_ep)) * dot_vec[counter];
+                        my_graph2.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) + (ep/(.00000001 + AdaGrad_ep)) * dot_vec[counter];
+                        if(my_graph2.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) - ep * dot_vec[counter] < 0.00){
                             //std::cout << "\n" << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << " is negative " << my_graph2.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) << " + " << ep * dot_vec[counter] << "\n";
                             neg_detected = true;
                             neg_index[counter] = 0;
@@ -502,9 +716,10 @@ int main(int argc, char *argv[])
                 }
             }
             if(neg_edge_counter != 0){
-                std::cout << "\nNumber of negative edges: " << neg_edge_counter;
-            }
+                std::cout<< "\nNumber of negative edges: " << neg_edge_counter;
+            } 
             if(neg_detected == false){
+                int plot = compute_var_grad(ev, eigen_pairs[(*my_graph.nodes[0]).id].second, eigen_pairs[(*my_graph.nodes[0]->neighbors[0]).id].second, stdev, true);
                 break;
             }
         }
@@ -543,42 +758,88 @@ int main(int argc, char *argv[])
             }    
         }
 
-        std::cout << "\nTrace: " << trace << " EdgeSum: " << edgeSum << "\n";
+        std::cout << "\nTrace: " << trace << " EdgeSum: " << edgeSum;
     
         ev = ev2;
         B_Matrix = B_Matrix2;
         iteration_counter++;
-        
-        int N = 500;
+/*
+        int scale_factor = (MAX_X*MAX_X*2 - 2 * MAX_X)*2;
+
+        // scale weights
+        int counter = 0;
+        for(int i = 0; i < my_graph.nodes.size(); i++){
+                for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
+                    if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){
+                        my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) * (scale_factor/trace);
+                        my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) * (scale_factor/trace);
+                        counter++;
+                    }
+                }
+            }
+        my_graph.computeMatrices2();
+        trace = 0;
+        for(int i = 0; i < MAX_X*MAX_X; i++){
+            trace = trace + my_graph.laplacianMatrix(i,i);
+        }
+        std::cout << "\nTrace: " << trace << "\n";
+*/
+        // manual stoppage control
+        int N = 50;
         // display eigenvalue spectrum, final updated graph, and first 4 eigenvectors every N iterations or until can't compute gradient further
         if(iteration_counter % N == 0 || neg_edge_counter == ev.size()){
-            plotHistogram(ev);
+            plotHistogram(ev, maxFreq, iteration_counter);
             Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
             my_plot2.plotGraph(my_graph);
             my_plot2.displayPlot(true);
             auto eigen_pairs_final = get_eigen_pairs(B_Matrix2);
             plotHeatMap(eigen_pairs_final[0].second, MAX_X, "EV0");
             plotHeatMap(eigen_pairs_final[1].second, MAX_X, "EV1");
-            plotHeatMap(eigen_pairs_final[2].second, MAX_X, "EV2");
-            plotHeatMap(eigen_pairs_final[3].second, MAX_X, "EV3");
+            //plotHeatMap(eigen_pairs_final[2].second, MAX_X, "EV2");
+            //plotHeatMap(eigen_pairs_final[3].second, MAX_X, "EV3");
             if(neg_edge_counter == ev.size()){
                 break;
             }
             std::cout << "Enter q and press ENTER to exit or press ENTER to continue: ";
             int a = getc(stdin);
-            if(a ==113){
+            if(a == 113){
                 break;
             }
         }
     }
+
+
+        // automatic
+/*
+        int N = 1000;
+        // display eigenvalue spectrum, final updated graph, and first 4 eigenvectors every N iterations or until can't compute gradient further
+        if(iteration_counter % N == 0 || neg_edge_counter == ev.size() || ev[ev.size()-1]>99.8){
+            plotHistogram(ev, maxFreq, iteration_counter);
+            //Plot my_plot2("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
+            //my_plot2.plotGraph(my_graph);
+            //my_plot2.displayPlot(true);
+            //auto eigen_pairs_final = get_eigen_pairs(B_Matrix2);
+            //plotHeatMap(eigen_pairs_final[0].second, MAX_X, "EV0");
+            //plotHeatMap(eigen_pairs_final[1].second, MAX_X, "EV1");
+            //plotHeatMap(eigen_pairs_final[2].second, MAX_X, "EV2");
+            //plotHeatMap(eigen_pairs_final[3].second, MAX_X, "EV3");
+            if(neg_edge_counter == ev.size()){
+                break;
+            }
+            if(iteration_counter==25000){
+                break;
+            }
+        }
+    }
+*/
     // print final variance, mode properties and eigenvalues
-    double mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
+    mean = std::accumulate(ev.begin(), ev.end(), 0.0) / ev.size();
 
     std::vector<double> diff2(ev.size());
     std::transform(ev.begin(), ev.end(), diff2.begin(),
     std::bind2nd(std::minus<double>(), mean));
     sq_sum = std::inner_product(diff2.begin(), diff2.end(), diff2.begin(), 0.0);
-    double stdev = std::sqrt(sq_sum / ev.size());
+    stdev = std::sqrt(sq_sum / ev.size());
 
     std::cout << "Final Variance: " << stdev * stdev << "\n";
     modeIndex = findModeIndex(ev);
