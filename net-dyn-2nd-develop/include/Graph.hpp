@@ -10,15 +10,18 @@ private:
 public:
     std::vector<std::shared_ptr<Node>> nodes;
     Eigen::MatrixXf adjacencyMatrix, degreeMatrix, laplacianMatrix;
-    Eigen::MatrixXi connectivityMatrix;
+    Eigen::MatrixXf connectivityMatrix;
     Eigen::VectorXf eigenValues;
     Eigen::MatrixXf eigenVectors;
+
+    static constexpr double eps{0.1};
 
     void constructSimpleGraph(const int x, const int y);
 
     std::shared_ptr<Graph> applyGradient(const Eigen::MatrixXf &newAdjacencyMatrix) const;
 
     void computeMatrices();
+    void eigenDecompose();
 
     void simulateDynamics(const int tMax);
 };

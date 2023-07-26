@@ -32,11 +32,13 @@ void Graph::constructSimpleGraph(const int x, const int y)
     }
 }
 
-std::shared_ptr<Graph> applyGradient(const Eigen::MatrixXf &newAdjacencyMatrix) const{
+std::shared_ptr<Graph> Graph::applyGradient(const Eigen::MatrixXf &newAdjacencyMatrix) const{
     auto newGraph = std::make_shared<Graph>();
     newGraph->nodes = nodes;
     newGraph->adjacencyMatrix = newAdjacencyMatrix;
     newGraph->connectivityMatrix = connectivityMatrix;
+    // std::cout << "existing connectivity=\n" << connectivityMatrix << std::endl;
+    // std::cout << "assigned connectivity=\n" << newGraph->connectivityMatrix << std::endl;
     int nNodes = nodes.size();
     Eigen::MatrixXf D(nNodes, nNodes);
     for (int i{0}; i < nNodes; i++)
@@ -52,6 +54,7 @@ std::shared_ptr<Graph> applyGradient(const Eigen::MatrixXf &newAdjacencyMatrix) 
     newGraph->degreeMatrix = D;
     Eigen::MatrixXf L(nNodes, nNodes);
     newGraph->laplacianMatrix = newGraph->degreeMatrix - newGraph->adjacencyMatrix;
+    return newGraph;
 }
 
 void Graph::computeMatrices()
@@ -92,22 +95,22 @@ void Graph::computeMatrices()
     laplacianMatrix = L;
 }
 
-void eigenDecompose()
+void Graph::eigenDecompose()
 {
-    Eigen::MatrixXf matrixToSolve = laplacianMatrix + eps * Eigen::MatrixXf::Identity(laplacianMatrix.size());
+    Eigen::MatrixXf matrixToSolve = laplacianMatrix + eps * Eigen::MatrixXf::Identity(laplacianMatrix.rows(), laplacianMatrix.cols());
     Eigen::EigenSolver<Eigen::MatrixXf> solver(matrixToSolve);
     eigenValues = solver.eigenvalues().real();
     eigenVectors = solver.eigenvectors().real();
 
     // Combine eigenvalues and eigenvectors into a std::vector of pairs
-    std::vector<std::pair<double, Eigen::VectorXd>> eigenPairs;
+    std::vector<std::pair<double, Eigen::VectorXf>> eigenPairs;
     for (int i = 0; i < eigenValues.size(); ++i) {
         eigenPairs.push_back(std::make_pair(eigenValues[i], eigenVectors.col(i)));
     }
 
     // Sort the vector of pairs based on eigenvalues in ascending order
-    std::sort(eigenPairs.begin(), eigenPairs.end(), [](const std::pair<double, Eigen::VectorXd>& a,
-                const std::pair<double, Eigen::VectorXd>& b) {
+    std::sort(eigenPairs.begin(), eigenPairs.end(), [](const std::pair<double, Eigen::VectorXf>& a,
+                const std::pair<double, Eigen::VectorXf>& b) {
             return a.first < b.first;
             });
 

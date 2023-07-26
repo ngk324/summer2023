@@ -38,12 +38,13 @@ WARNS = -w
 
 LIBS = -lm -pthread
 LIBS_OPENCV = `pkg-config --cflags --libs opencv` -L/usr/local/share/OpenCV/3rdparty/lib/  # The -L option fixes bug with libippicv
+LIBS_GNUPLOT = -lboost_iostreams -lboost_system -lboost_filesystem
 
 LIB_FOLDERS = -L/usr/local/lib
 
 BIN_FOLDER = bin
 SRC_FOLDER = src
-MAIN_HEADERS = include/Plot.cpp include/Graph.cpp include/Node.cpp include/Dynamics.cpp include/Force.cpp
+MAIN_HEADERS = include/Plot.cpp include/Graph.cpp include/Node.cpp include/Dynamics.cpp include/Force.cpp include/Histogram.cpp
 
 
 .PHONY: main
@@ -59,5 +60,21 @@ alt:
 	@printf "\nNow compiling '$(_BLUE)$@$(_CLEAR)'...\n";
 	@$(call COMPILE_PROGRAM,\
 		$@,\
-		$(CC) $(CFLAGS) $(WARNS) $(INC_LOCAL) -o $(BIN_FOLDER)/$@ $(SRC_FOLDER)/$@.cpp $(MAIN_HEADERS) $(LIB_FOLDERS) $(LIBS) $(LIBS_OPENCV)\
+		$(CC) $(CFLAGS) $(WARNS) $(INC_LOCAL) -o $(BIN_FOLDER)/$@ $(SRC_FOLDER)/$@.cpp $(MAIN_HEADERS) $(LIB_FOLDERS) $(LIBS) $(LIBS_OPENCV) $(LIBS_GNUPLOT)\
+	)
+
+.PHONY: gnuplot_testing
+gnuplot_testing:
+	@printf "\nNow compiling '$(_BLUE)$@$(_CLEAR)'...\n";
+	@$(call COMPILE_PROGRAM,\
+		$@,\
+		$(CC) $(CFLAGS) $(WARNS) $(INC_LOCAL) -o $(BIN_FOLDER)/$@ $(SRC_FOLDER)/$@.cpp $(LIB_FOLDERS) $(LIBS) $(LIBS_OPENCV) $(LIBS_GNUPLOT)\
+	)
+
+.PHONY: histogram_test
+histogram_test:
+	@printf "\nNow compiling '$(_BLUE)$@$(_CLEAR)'...\n";
+	@$(call COMPILE_PROGRAM,\
+		$@,\
+		$(CC) $(CFLAGS) $(WARNS) $(INC_LOCAL) -o $(BIN_FOLDER)/$@ $(SRC_FOLDER)/$@.cpp $(MAIN_HEADERS) $(LIB_FOLDERS) $(LIBS) $(LIBS_OPENCV) $(LIBS_GNUPLOT)\ 
 	)
