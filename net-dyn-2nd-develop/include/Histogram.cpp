@@ -4,20 +4,25 @@
 namespace histogram{
     void generateHistogram(Gnuplot &plotObj, Eigen::VectorXf &eigenvalues){
         // std::cout << eigenvalues << std::endl;
-        double eigen_sum = std::accumulate(eigenvalues.begin(), eigenvalues.end(), 0);
+        double eigenSum = std::accumulate(eigenvalues.begin(), eigenvalues.end(), 0);
+        int eigenSize = eigenvalues.size();
 
         plotObj << "reset\n";
-        plotObj << "n=50\n";
-        // plotObj << "max=" << eigen_sum/20 << "\n";
-        plotObj << "max=500\n"; 
         plotObj << "min=0\n";
-        plotObj << "width=(max-min)/n\n";
+//         int n_bins = eigen_sum/10;
+//         plotObj << "n=" << n_bins << "\n";
+//         // plotObj << "max=500\n"; 
+//         plotObj << "width=(max-min)/n\n";
+        // plotObj << "max=" << eigenvalues[eigenSize-1]+5 << "\n";
+        plotObj << "max=" << eigenSum*10/eigenSize << "\n";
+        plotObj << "width=1\n";
+        // plotObj << "width=" << eigenSum/eigenSize << "\n";
 
         plotObj << "hist(x,width)=width*floor(x/width)+width/2.0\n";
         // plotObj << "set term png\n";
         // plotObj << "set output 'histogram.png'\n";
         plotObj << "set xrange [min:max]\n";
-        plotObj << "set yrange [0:" << eigenvalues.size()+5 << "]\n";
+        plotObj << "set yrange [0:" << eigenSize+1 << "]\n";
 
         plotObj << "set offset graph 0.05,0.05,0.05,0.0\n";
         plotObj << "set xtics min,(max-min)/5,max\n";
