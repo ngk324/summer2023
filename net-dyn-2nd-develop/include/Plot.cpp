@@ -148,8 +148,13 @@ void Plot::initWindow()
 void Plot::displayPlot(bool waitForKey)
 {
     cv::imshow(windowName, currentImg);
-    if (waitForKey)
-        cv::waitKey(0);
+    if (waitForKey){
+        char key = (char)cv::waitKey(); // explicit cast
+        while (key != 27)
+        {
+            key = (char)cv::waitKey();
+        }
+    }
     else
         cv::waitKey(1);
 }

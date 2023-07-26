@@ -196,8 +196,13 @@ std::shared_ptr<Graph> graphGradientDescent(const std::shared_ptr<Graph> current
 
 int main(int argc, char *argv[]){
     int size{10};
-    if(argc>1){
+    int nIter{1000000};
+    if(argc==2){
         size = std::stoi(argv[1]);
+    }
+    else if(argc>2){
+        size = std::stoi(argv[1]);
+        nIter = std::stoi(argv[2]);
     }
 
     // Initialize graph
@@ -215,7 +220,6 @@ int main(int argc, char *argv[]){
     // For loop
     std::vector<std::shared_ptr<Graph>> graphHistory;
     graphHistory.push_back(graphInit);
-    int nIter{1000000};
     Gnuplot gp;
     for (int i{0}; i<nIter; i++){
         std::cout << "Iter: " << i << std::endl;
@@ -235,6 +239,7 @@ int main(int argc, char *argv[]){
     my_plot.plotGraph(*graphHistory.back());
     my_plot.displayPlot(true);
 
-    gp << "exit\n";
+    gp_init << "set term x11 close\n";
+    gp << "set term x11 close\n";
     return 0;
 }
