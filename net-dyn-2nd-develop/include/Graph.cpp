@@ -2,15 +2,16 @@
 #include <iostream>
 #include <memory>
 
-void Graph::constructSimpleGraph(const int x, const int y)
+void Graph::constructSimpleGraph(const int size)
 {
 
+    gridSize = size;
     // Randomly assign some state value and generate nodes
     srand(time(NULL));
     int idx{0};
-    for (int i{0}; i < x; i++)
+    for (int i{0}; i < gridSize; i++)
     {
-        for (int j{0}; j < y; j++)
+        for (int j{0}; j < gridSize; j++)
         {
             double rand_state{((double)rand() / (double)RAND_MAX)};
             std::shared_ptr<Node> ptr{new Node(i, j, idx, rand_state)};
@@ -30,6 +31,7 @@ void Graph::constructSimpleGraph(const int x, const int y)
             }
         }
     }
+    computeMatrices();
 }
 
 std::shared_ptr<Graph> Graph::applyGradient(const Eigen::MatrixXf &newAdjacencyMatrix) const{
@@ -54,6 +56,7 @@ std::shared_ptr<Graph> Graph::applyGradient(const Eigen::MatrixXf &newAdjacencyM
     newGraph->degreeMatrix = D;
     Eigen::MatrixXf L(nNodes, nNodes);
     newGraph->laplacianMatrix = newGraph->degreeMatrix - newGraph->adjacencyMatrix;
+    newGraph->eigenDecompose();
     return newGraph;
 }
 
@@ -93,6 +96,7 @@ void Graph::computeMatrices()
     Eigen::MatrixXf L(nNodes, nNodes);
     L = degreeMatrix - adjacencyMatrix;
     laplacianMatrix = L;
+    eigenDecompose();
 }
 
 void Graph::eigenDecompose()

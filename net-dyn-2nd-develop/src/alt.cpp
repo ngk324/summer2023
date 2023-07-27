@@ -206,10 +206,8 @@ int main(int argc, char *argv[]){
     }
 
     // Initialize graph
-    int x{size};
-    int y{size};
     std::shared_ptr<Graph> graphInit = std::make_shared<Graph>();
-    graphInit->constructSimpleGraph(x,y);
+    graphInit->constructSimpleGraph(size);
     graphInit->computeMatrices();
     graphInit->eigenDecompose();
     Gnuplot gp_init;

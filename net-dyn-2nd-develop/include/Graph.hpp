@@ -8,6 +8,7 @@ class Graph
 {
 private:
 public:
+    int gridSize;
     std::vector<std::shared_ptr<Node>> nodes;
     Eigen::MatrixXf adjacencyMatrix, degreeMatrix, laplacianMatrix;
     Eigen::MatrixXf connectivityMatrix;
@@ -16,7 +17,7 @@ public:
 
     static constexpr double eps{0.1};
 
-    void constructSimpleGraph(const int x, const int y);
+    void constructSimpleGraph(const int size);
 
     std::shared_ptr<Graph> applyGradient(const Eigen::MatrixXf &newAdjacencyMatrix) const;
 

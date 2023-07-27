@@ -44,7 +44,7 @@ LIB_FOLDERS = -L/usr/local/lib
 
 BIN_FOLDER = bin
 SRC_FOLDER = src
-MAIN_HEADERS = include/Plot.cpp include/Graph.cpp include/Node.cpp include/Dynamics.cpp include/Force.cpp include/Histogram.cpp
+MAIN_HEADERS = include/Plot.cpp include/Graph.cpp include/Node.cpp include/Dynamics.cpp include/Force.cpp include/Histogram.cpp include/GradientDescent.cpp
 
 
 .PHONY: main
@@ -57,6 +57,14 @@ main:
 
 .PHONY: alt
 alt:
+	@printf "\nNow compiling '$(_BLUE)$@$(_CLEAR)'...\n";
+	@$(call COMPILE_PROGRAM,\
+		$@,\
+		$(CC) $(CFLAGS) $(WARNS) $(INC_LOCAL) -o $(BIN_FOLDER)/$@ $(SRC_FOLDER)/$@.cpp $(MAIN_HEADERS) $(LIB_FOLDERS) $(LIBS) $(LIBS_OPENCV) $(LIBS_GNUPLOT)\
+	)
+
+.PHONY: gdMain
+gdMain:
 	@printf "\nNow compiling '$(_BLUE)$@$(_CLEAR)'...\n";
 	@$(call COMPILE_PROGRAM,\
 		$@,\
