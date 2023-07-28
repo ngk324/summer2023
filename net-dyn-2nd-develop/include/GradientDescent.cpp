@@ -5,7 +5,11 @@
 #include <numeric>
 #include <vector>
 
-GradientDescent::GradientDescent(std::shared_ptr<Graph> initGraph): graphGridSize{initGraph->gridSize}{
+GradientDescent::GradientDescent(std::shared_ptr<Graph> initGraph): graphGridSize{initGraph->gridSize}, constrainedWeights{true}, fixedWeightSum{true}{
+    graphHistory.push_back(initGraph);
+}
+
+GradientDescent::GradientDescent(std::shared_ptr<Graph> initGraph, bool weightConstraint, bool weightSumConstraint): graphGridSize{initGraph->gridSize}, constrainedWeights{weightConstraint}, fixedWeightSum{weightSumConstraint}{
     graphHistory.push_back(initGraph);
 }
 
@@ -34,17 +38,58 @@ void GradientDescent::runOneStepDescent(){
     do{
         if(nRecompute > maxRecompute)
             return;
-        auto adjGradient = computeAdjGradient(graphHistory.back(), weightsToAvoid); 
-        std::cout << adjGradient << std::endl;
+        auto adjGradient = computeAdjGradientDoubleMin(graphHistory.back(), weightsToAvoid); 
+        // auto adjGradient = computeAdjGradientDoubleSum(graphHistory.back(), weightsToAvoid); 
         newAdjacencyMatrix = oldAdjacencyMatrix + gradientStep * adjGradient; 
-        scaledAdjacencyMatrix = newAdjacencyMatrix * oldAdjacencyMatrix.sum() / newAdjacencyMatrix.sum(); 
+        if(fixedWeightSum)
+            scaledAdjacencyMatrix = newAdjacencyMatrix * oldAdjacencyMatrix.sum() / newAdjacencyMatrix.sum(); 
+        else
+            scaledAdjacencyMatrix = newAdjacencyMatrix; 
         nRecompute++;
-        weightsToAvoid = getInvalidWeightIdx(scaledAdjacencyMatrix);
+        if(constrainedWeights)
+            weightsToAvoid = getInvalidWeightIdx(scaledAdjacencyMatrix);
     }while(!weightsToAvoid.empty());
     graphHistory.push_back(graphHistory.back()->applyGradient(scaledAdjacencyMatrix));
 }
 
-Eigen::MatrixXf GradientDescent::computeAdjGradient(const std::shared_ptr<Graph> graph, std::vector<MatrixIdx> &weightsToAvoid) const{
+Eigen::MatrixXf GradientDescent::computeAdjGradientDoubleMin(const std::shared_ptr<Graph> graph, std::vector<MatrixIdx> &weightsToAvoid) const{
+
+    // double max gradient
+    Eigen::MatrixXf gradientMat = Eigen::MatrixXf::Zero(graph->adjacencyMatrix.rows(),graph->adjacencyMatrix.cols());
+    auto eigenvalues = graph->eigenValues;
+    double minVal = eigenvalues[eigenvalues.size()-1];
+    MatrixIdx closestLambdaIdx(-1,-1);
+    for(int j{0}; j<eigenvalues.size(); j++){
+        double lambda_j = graph->eigenValues[j];
+        for(int k{j+1}; k<eigenvalues.size(); k++){
+            double lambda_k = eigenvalues[k];
+            if(lambda_k - lambda_j < minVal){
+                minVal = lambda_k-lambda_j;
+                closestLambdaIdx = MatrixIdx(j,k);
+            }
+
+        }
+    }
+    auto u_j = graph->eigenVectors.col(closestLambdaIdx.j);
+    auto u_k = graph->eigenVectors.col(closestLambdaIdx.k);
+    double lambda_j = eigenvalues[closestLambdaIdx.j];
+    double lambda_k = eigenvalues[closestLambdaIdx.k];
+    for(int i{0}; i<gradientMat.rows(); i++){
+        for(int l{i+1}; l<gradientMat.cols(); l++){
+            if(graph->connectivityMatrix(i,l) == 0)
+                continue;
+            gradientMat(i,l) = 2*(lambda_k-lambda_j+0.1)*(pow(u_k[i]-u_k[l],2) - pow(u_j[i]-u_j[l],2));
+            gradientMat(l,i) = gradientMat(i,l);
+        }
+    }
+    for(auto &el: weightsToAvoid){
+        gradientMat(el.j,el.k) = 0;
+        gradientMat(el.k,el.j) = 0;
+    }
+    return gradientMat;
+}
+
+Eigen::MatrixXf GradientDescent::computeAdjGradientDoubleSum(const std::shared_ptr<Graph> graph, std::vector<MatrixIdx> &weightsToAvoid) const{
 
     // double sum gradient
     Eigen::MatrixXf gradientMat = Eigen::MatrixXf::Zero(graph->adjacencyMatrix.rows(),graph->adjacencyMatrix.cols());
@@ -106,11 +151,15 @@ void GradientDescent::printIterInfo(const int iterNo) const{
     std::cout << "Iter #: " << iterNo+1 << std::endl;
     auto eigenvalues = graphHistory.back()->eigenValues;
     std::cout << "Eigenvalue sum: " << std::accumulate(eigenvalues.begin(), eigenvalues.end(), 0) << std::endl;
-    double objValue{0};
+    double eigDistNorm{0};
+    double eigDistMin{eigenvalues[eigenvalues.size()-1]};
     for(int j{0}; j<eigenvalues.size(); j++){
         for(int k{0}; k<eigenvalues.size(); k++){
-            objValue += pow(eigenvalues[j] - eigenvalues[k], 2);
+            eigDistNorm += pow(eigenvalues[j] - eigenvalues[k], 2);
+            if(abs(eigenvalues[j]-eigenvalues[k])<eigDistMin)
+                eigDistMin = abs(eigenvalues[j]-eigenvalues[k]);
         }
     }
-    std::cout << "Objective value: " << objValue << std::endl;
+    std::cout << "Eigenvalues cumulative distance : " << eigDistNorm << std::endl;
+    std::cout << "Eigenvalues minimum distance : " << eigDistMin << std::endl;
 }
