@@ -367,7 +367,7 @@ void plotHistogram(const std::vector<double>& values, int maxFrequency, int itNu
     double bins = 20.0;
     // Find the minimum and maximum values in the vector
     double minValue = 0;
-    double maxValue = 10;
+    double maxValue = 8;
     //double minValue = *std::min_element(values.begin(), values.end());
     //double maxValue = *std::max_element(values.begin(), values.end());
 
@@ -413,7 +413,7 @@ void plotHistogram(const std::vector<double>& values, int maxFrequency, int itNu
     // Create a window and display the histogram
     cv::namedWindow("Histogram", cv::WINDOW_NORMAL);
     cv::imshow("Histogram", histImage);
-    std::__cxx11::basic_string<char> name = "tests/Iteration_scaled_"+std::to_string(itNum) + ".jpg";
+    std::__cxx11::basic_string<char> name = "tests/Iteration_scaled2"+std::to_string(itNum) + ".jpg";
     cv::imwrite(name, histImage);  
     cv::waitKey(0);
     cv::destroyAllWindows();
@@ -424,7 +424,7 @@ int plotHistogramFirst(const std::vector<double>& values, int itNum)
     double bins = 20;
     // Find the minimum and maximum values in the vector
     double minValue = 0;
-    double maxValue = 10;
+    double maxValue = 8;
     //double minValue = *std::min_element(values.begin(), values.end());
     //double maxValue = *std::max_element(values.begin(), values.end());
 
@@ -470,7 +470,7 @@ int plotHistogramFirst(const std::vector<double>& values, int itNum)
     // Create a window and display the histogram
     cv::namedWindow("Histogram", cv::WINDOW_NORMAL);
     cv::imshow("Histogram", histImage);
-    std::__cxx11::basic_string<char> name = "tests/Iteration_scaled"+std::to_string(itNum) + ".jpg";
+    std::__cxx11::basic_string<char> name = "tests/Iteration_scaled2"+std::to_string(itNum) + ".jpg";
     cv::imwrite(name, histImage);  
     cv::waitKey(0);
     cv::destroyAllWindows();
