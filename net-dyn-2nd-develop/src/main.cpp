@@ -190,7 +190,7 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
 }
 */
 
-/*
+
 // double max
 double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev, bool print){
     double d_var = 0; 
@@ -228,14 +228,14 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
                 }
             }
         }
-        d_var = maxVal * (vki[i] * vki[i] + vkj[i]*vkj[i]  - 2.0*vki[i]*vkj[i]);
+        d_var = d_var + maxVal * (vki[i] * vki[i] + vkj[i]*vkj[i]  - 2.0*vki[i]*vkj[i]);
     }
     //std::cout << "\n" << d_var;
     return d_var;
 }
-*/
 
 
+/*
 // double max
 double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, -1, 1> vki, Eigen::Matrix<float, -1, 1> vkj, double stdev, bool print){
     double d_var = 0; 
@@ -293,7 +293,7 @@ double compute_var_grad(const std::vector<double>& values, Eigen::Matrix<float, 
     }
     return d_var;
 }
-
+*/
 
 // rounds to 4 decimal places
 double round(double var, int place)
@@ -364,10 +364,10 @@ void plotHeatMap(Eigen::Matrix<float, -1, 1> arr, int size, char* name)
 
 void plotHistogram(const std::vector<double>& values, int maxFrequency, int itNum)
 {
-    double bins = 60.0;
+    double bins = 20.0;
     // Find the minimum and maximum values in the vector
     double minValue = 0;
-    double maxValue = 60;
+    double maxValue = 10;
     //double minValue = *std::min_element(values.begin(), values.end());
     //double maxValue = *std::max_element(values.begin(), values.end());
 
@@ -413,7 +413,7 @@ void plotHistogram(const std::vector<double>& values, int maxFrequency, int itNu
     // Create a window and display the histogram
     cv::namedWindow("Histogram", cv::WINDOW_NORMAL);
     cv::imshow("Histogram", histImage);
-    std::__cxx11::basic_string<char> name = "tests/Iteration_scaling_"+std::to_string(itNum) + ".jpg";
+    std::__cxx11::basic_string<char> name = "tests/Iteration_scaled_"+std::to_string(itNum) + ".jpg";
     cv::imwrite(name, histImage);  
     cv::waitKey(0);
     cv::destroyAllWindows();
@@ -421,10 +421,10 @@ void plotHistogram(const std::vector<double>& values, int maxFrequency, int itNu
 
 int plotHistogramFirst(const std::vector<double>& values, int itNum)
 {
-    double bins = 60;
+    double bins = 20;
     // Find the minimum and maximum values in the vector
     double minValue = 0;
-    double maxValue = 60;
+    double maxValue = 10;
     //double minValue = *std::min_element(values.begin(), values.end());
     //double maxValue = *std::max_element(values.begin(), values.end());
 
@@ -470,7 +470,7 @@ int plotHistogramFirst(const std::vector<double>& values, int itNum)
     // Create a window and display the histogram
     cv::namedWindow("Histogram", cv::WINDOW_NORMAL);
     cv::imshow("Histogram", histImage);
-    std::__cxx11::basic_string<char> name = "tests/Iteration_scaling"+std::to_string(itNum) + ".jpg";
+    std::__cxx11::basic_string<char> name = "tests/Iteration_scaled"+std::to_string(itNum) + ".jpg";
     cv::imwrite(name, histImage);  
     cv::waitKey(0);
     cv::destroyAllWindows();
@@ -552,8 +552,8 @@ Graph scale(Graph my_graph, double scale_factor, double trace){
     for(int i = 0; i < my_graph.nodes.size(); i++){
         for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
             if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){                              
-                my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) - (scale_factor/trace);
-                my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) - (scale_factor/trace);
+                my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) * (scale_factor/trace);
+                my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) * (scale_factor/trace);
                 counter++;
             }
         }
@@ -673,13 +673,13 @@ int main(int argc, char *argv[])
         decentralizedAlg = std::stoi(argv[1]);
     }
     // Initialize and construct simple graph
-    int xGrid{20}, yGrid{20};
+    int xGrid{10}, yGrid{10};
     Graph my_graph;
     my_graph.constructSimpleGraph(xGrid, yGrid);
     my_graph.computeMatrices();
 
-    int MAX_X = 20;
-    int MAX_Y = 20;
+    int MAX_X = 10;
+    int MAX_Y = 10;
     int PLOT_SCALE = 40;
     int vPad = 2;
     int hPad = 2;
@@ -772,7 +772,7 @@ int main(int argc, char *argv[])
             std::vector<double> dot_vec = var_gradient;
 
             // calc adapative gradient value
-            double AdaGrad_ep = calc_adaGrad(dot_vec);
+            double AdaGrad_ep = 1;//calc_adaGrad(dot_vec);
             std::cout << "\nAdagrad: " << AdaGrad_ep;
 
             // updates edge weights from gradient vector. If edge weights become negative, index is saved and gradient descent is performed again, with that gradient being 0
@@ -780,9 +780,9 @@ int main(int argc, char *argv[])
             for(int i = 0; i < my_graph.nodes.size(); i++){
                 for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
                     if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){
-                        my_graph2.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) - (ep/(.00000001 + AdaGrad_ep)) * dot_vec[counter];
-                        my_graph2.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) - (ep/(.00000001 + AdaGrad_ep)) * dot_vec[counter];
-                        if(my_graph2.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) - ep * dot_vec[counter] < 0.00){
+                        my_graph2.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + (ep/(.00000001 + AdaGrad_ep)) * dot_vec[counter];
+                        my_graph2.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) + (ep/(.00000001 + AdaGrad_ep)) * dot_vec[counter];
+                        if(my_graph2.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) + ep * dot_vec[counter] < 0.00){
                             //std::cout << "\n" << (*my_graph.nodes[i]).id << ", " << (*my_graph.nodes[i]->neighbors[j]).id << " is negative " << my_graph2.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) << " + " << ep * dot_vec[counter] << "\n";
                             neg_detected = true;
                             neg_index[counter] = 0;
@@ -805,36 +805,48 @@ int main(int argc, char *argv[])
 
         // updates graph 
         my_graph = my_graph2;
+
         
+        my_graph.computeMatrices2();
+        double trace;
+        if(iteration_counter == 1749){
+        // compute and print trace and edge sum to ensure graph properties remain the same
+        trace = calc_trace(my_graph, MAX_X);
+
+        std::cout << "\nTrace: " << trace;
+        
+        int scale_factor = (MAX_X*MAX_X*2 - 2 * MAX_X)*2;
+
+        // scale weights
+        //my_graph = scale(my_graph, scale_factor, trace);
+        int counter = 0;
+        for(int i = 0; i < my_graph.nodes.size(); i++){
+            for(int j = 0; j < (my_graph.nodes[i])->neighbors.size(); j++){
+                if((*my_graph.nodes[i]).id < (*my_graph.nodes[i]->neighbors[j]).id){                              
+                    my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]).id, (*my_graph.nodes[i]->neighbors[j]).id) * (scale_factor/trace);
+                    my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) = my_graph.adjacencyMatrix((*my_graph.nodes[i]->neighbors[j]).id, (*my_graph.nodes[i]).id) * (scale_factor/trace);
+                    counter++;
+                }
+            }
+        }
+        }
         // recomputes laplacian matrix with new edge weights
         my_graph.computeMatrices2(); 
         Eigen::MatrixXf B_Matrix2 = my_graph.laplacianMatrix;
         eigen_pairs2 = get_eigen_pairs_transpose(B_Matrix2);
 
+        trace = calc_trace(my_graph, MAX_X);
+        std::cout << "\nTrace: " << trace << "\n";
+
         // creates vector of eigenvalues
         std::vector<double> ev2 = create_eigenvalue_vector(eigen_pairs2, false);
 
-        // compute and print trace and edge sum to ensure graph properties remain the same
-        double trace = calc_trace(my_graph, MAX_X);
-
-        std::cout << "\nTrace: " << trace;
-    
         ev = ev2;
         B_Matrix = B_Matrix2;
         iteration_counter++;
-/*
-        int scale_factor = (MAX_X*MAX_X*2 - 2 * MAX_X)*2;
-
-        // scale weights
-        my_graph = scale(my_graph, scale_factor, trace);
-        my_graph.computeMatrices2();
-
-        trace = calc_trace(my_graph, MAX_X);
-        std::cout << "\nTrace: " << trace << "\n";
-*/
 
         // manual stoppage control
-        int N = 10;
+        int N = 1750;
         // display eigenvalue spectrum, final updated graph, and first 4 eigenvectors every N iterations or until can't compute gradient further
         if(iteration_counter % N == 0 || neg_edge_counter == ev.size()){
             plotHistogram(ev, maxFreq, iteration_counter);
