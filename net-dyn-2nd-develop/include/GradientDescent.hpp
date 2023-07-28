@@ -7,6 +7,12 @@
 #include "Graph.hpp"
 #include "gnuplot-iostream.h"
 
+struct MatrixIdx{
+    int j;
+    int k;
+    MatrixIdx(int jj, int kk): j{jj}, k{kk}{}
+};
+
 class GradientDescent{
 
 public:
@@ -14,14 +20,20 @@ public:
     void runNStepDescent(const int nIter);
     void destroyHistogram();
 private:
-    int graphGridSize;
+    const int graphGridSize;
+    const double minEdgeWeight{0.2};
+    const int maxRecompute{5};
     Gnuplot histogramStream;
-    double gradientStep;    
-    void decreaseGradientStep();
+    double gradientStep{0.001};
     std::vector<std::shared_ptr<Graph>> graphHistory;
+    void decreaseGradientStep();
     void runOneStepDescent();
+    Eigen::MatrixXf computeAdjGradient(const std::shared_ptr<Graph> graph, std::vector<MatrixIdx> &weightsToAvoid) const;
+    bool invalidAdjacencyMatrix(const Eigen::MatrixXf &adjMat) const;
+    std::vector<MatrixIdx> getInvalidWeightIdx(const Eigen::MatrixXf &adjMat) const;
     void plotHistogram();
     void plotGraph();
+    void printIterInfo(const int iterNo) const;
 };
 
 
