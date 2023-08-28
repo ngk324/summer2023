@@ -38,18 +38,18 @@ WARNS = -w
 
 LIBS = -lm -pthread
 LIBS_OPENCV = `pkg-config --cflags --libs opencv` -L/usr/local/share/OpenCV/3rdparty/lib/  # The -L option fixes bug with libippicv
+LIBS_GNUPLOT = -lboost_iostreams -lboost_system -lboost_filesystem
 
 LIB_FOLDERS = -L/usr/local/lib
 
 BIN_FOLDER = bin
 SRC_FOLDER = src
-MAIN_HEADERS = include/Plot.cpp include/Graph.cpp include/Node.cpp include/Dynamics.cpp include/Force.cpp
+MAIN_HEADERS = include/Plot.cpp include/Graph.cpp include/Node.cpp include/Dynamics.cpp include/Force.cpp include/Histogram.cpp include/GradientDescent.cpp include/ObjectivePlot.cpp include/EnergyPlot.cpp include/XPlot.cpp
 
-
-.PHONY: main
-main:
+.PHONY: gdMain
+gdMain:
 	@printf "\nNow compiling '$(_BLUE)$@$(_CLEAR)'...\n";
 	@$(call COMPILE_PROGRAM,\
 		$@,\
-		$(CC) $(CFLAGS) $(WARNS) $(INC_LOCAL) -o $(BIN_FOLDER)/$@ $(SRC_FOLDER)/$@.cpp $(MAIN_HEADERS) $(LIB_FOLDERS) $(LIBS) $(LIBS_OPENCV)\
+		$(CC) $(CFLAGS) $(WARNS) $(INC_LOCAL) -o $(BIN_FOLDER)/$@ $(SRC_FOLDER)/$@.cpp $(MAIN_HEADERS) $(LIB_FOLDERS) $(LIBS) $(LIBS_OPENCV) $(LIBS_GNUPLOT)\
 	)
