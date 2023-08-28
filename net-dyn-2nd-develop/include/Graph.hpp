@@ -8,18 +8,23 @@ class Graph
 {
 private:
 public:
+    int gridSize;
     std::vector<std::shared_ptr<Node>> nodes;
     Eigen::MatrixXf adjacencyMatrix, degreeMatrix, laplacianMatrix;
+    Eigen::MatrixXf connectivityMatrix;
+    Eigen::VectorXf eigenValues;
+    Eigen::MatrixXf eigenVectors;
 
-    void constructSimpleGraph(int x, int y);
+    static constexpr double eps{0.1};
+
+    void constructSimpleGraph(const int size);
+
+    std::shared_ptr<Graph> applyGradient(const Eigen::MatrixXf &newAdjacencyMatrix) const;
 
     void computeMatrices();
+    void eigenDecompose();
 
-    void computeMatrices2();
-
-    void simulateDynamics(int tMax);
-
-    void calc_grad_descent();
+    void simulateDynamics(const int tMax);
 };
 
 #endif

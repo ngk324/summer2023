@@ -1,4 +1,5 @@
 #include "Plot.hpp"
+#include <algorithm>
 
 CvScalar Plot::defaultNodeColor = cvScalar(150, 150, 150);
 CvScalar Plot::defaultEdgeColor = cvScalar(150, 150, 150);
@@ -80,16 +81,20 @@ void Plot::plotEigen(const Graph &g, Eigen::VectorXf &vec, int size)
     }
 }
 
-void Plot::plotNode(Node &n, int size)
+void Plot::plotNode(Node &n, double max, double min, int size)
 {
     CvScalar color;
-    double val = abs(n.z) * 500;
-    if (n.z > 0)
+    double val;
+    if (n.z > 0){
+        val = abs(n.z) * (255.0/abs(max));
         color = cvScalar(val, 0, 0);
-    else
+    }
+    else{
+        val = abs(n.z) * (255.0/abs(min));
         color = cvScalar(0, 0, val);
-    cv::circle(currentImg, transformGraphToPlot(n), size, cvScalar(0, 0, 0), -1);
-    //cv::circle(currentImg, transformGraphToPlot(n), size, color, -1);
+    }
+    //cv::circle(currentImg, transformGraphToPlot(n), size, cvScalar(0, 0, 0), -1);
+    cv::circle(currentImg, transformGraphToPlot(n), size, color, -1);
 }
 
 //void Plot::plotEdge(Node &n1, Node &n2, CvScalar color, double thickness)
@@ -106,38 +111,33 @@ double Plot::round(double var, int place)
 
 void Plot::plotGraph(Graph &g)
 {   
-    double max = (g.adjacencyMatrix.coeff((*g.nodes[0]).id,(*g.nodes[0]->neighbors[0]).id));
-    for (int i{0}; i < g.nodes.size(); i++)
-    {
-        for (int j{0}; j < g.nodes[i]->neighbors.size(); j++)
-        {
-            //std::cout << g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id) << "\n";
-            if(max < g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)){
-                max = g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id);
-            }
-        }
-    }
+    double max = std::max<double>(g.adjacencyMatrix.maxCoeff(),0.0);
+    double min = std::min<double>(g.adjacencyMatrix.minCoeff(),0.0);
+
+    double maxEV = std::max<double>(g.eigenValues.maxCoeff(),0.0);
+    double minEV = std::min<double>(g.eigenValues.minCoeff(),0.0);
     //std::cout << "edges plotted \n";
     for (int i{0}; i < g.nodes.size(); i++)
     {
         for (int j{0}; j < g.nodes[i]->neighbors.size(); j++)
         {
-            //if((g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)) > 0 && i != j){
+            double edgeWeight = g.adjacencyMatrix(g.nodes[i]->id,g.nodes[i]->neighbors[j]->id);
+            CvScalar edgeColor = cvScalar(0,0,0);
+            edgeColor.val[0] = 255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255))/(max-min));
+            edgeColor.val[1] = edgeColor.val[0];
+            edgeColor.val[2] = edgeColor.val[0];
             if((*g.nodes[i]).id < (*g.nodes[i]->neighbors[j]).id){
-                //std::cout << "(i,j): " << (*g.nodes[i]).id << ", " << (*g.nodes[i]->neighbors[j]).id << ": " << round(1 + max+(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*5))/max),5) << "\n";
-
-                plotEdge(*g.nodes[i], *g.nodes[i]->neighbors[j], round(1 + max+(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*5))/max),5), cvScalar(255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255)/max)),255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255))/max),255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255))/max)));
-                //plotEdge(*g.nodes[i], *g.nodes[i]->neighbors[j], (255 + (int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id))) / 255, cvScalar(255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255)/max)),255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255))/max),255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,(*g.nodes[i]->neighbors[j]).id)*255))/max)));
-                //((int)g.adjacencyMatrix.coeff(i,j)*10)
+                plotEdge(*g.nodes[i], *g.nodes[i]->neighbors[j], 75/sqrt(g.nodes.size()), edgeColor);
             }
         }
     }
 
     for (int i{0}; i < g.nodes.size(); i++)
     {
-        plotNode(*g.nodes[i]);
+        plotNode(*g.nodes[i], maxEV, minEV);
     }
 }
+
 
 void Plot::initWindow()
 {
@@ -148,8 +148,13 @@ void Plot::initWindow()
 void Plot::displayPlot(bool waitForKey)
 {
     cv::imshow(windowName, currentImg);
-    if (waitForKey)
-        cv::waitKey(0);
+    if (waitForKey){
+        char key = (char)cv::waitKey(); // explicit cast
+        while (key != 27)
+        {
+            key = (char)cv::waitKey();
+        }
+    }
     else
         cv::waitKey(1);
 }

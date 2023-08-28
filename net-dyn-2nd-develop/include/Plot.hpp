@@ -40,9 +40,9 @@ public:
 
     void plotEigen(const Graph &g, Eigen::VectorXf &vec, int size = defaultNodeSize);
 
-    void plotNode(Node &n, int size = defaultNodeSize);
+    void plotNode(Node &n, double max, double min, int size = defaultNodeSize);
 
-    void plotEdge(Node &n1, Node &n2, double thickness, CvScalar color);
+    void plotEdge(Node &n1, Node &n2, double thickness=defaultEdgeThickness, CvScalar color=defaultEdgeColor);
 
     void plotGraph(Graph &g);
 

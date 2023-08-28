@@ -17,6 +17,9 @@ public:
     void insertForceElement(int idx);
 
     Eigen::VectorXf sinusoidalForce(double t);
+    Eigen::VectorXf sinCauchyForce(double t);
+    double inverse_of_normal_cdf(const double p, const double mu, const double sigma);
+
 };
 
 #endif

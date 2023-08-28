@@ -1,6 +1,12 @@
 #include "Dynamics.hpp"
+#include "EnergyPlot.hpp"
+#include "XPlot.hpp"
 
 #include <unistd.h>
+#include <algorithm>
+#include <memory>
+#include <numeric>
+#include <vector>
 
 Dynamics::Dynamics(int sim_time, int sim_steps, double damping, double stiffness)
     : simTime{sim_time}, simSteps{sim_steps}, dampingCoeff{damping}, stiffnessCoeff{stiffness} {}
@@ -25,26 +31,47 @@ void Dynamics::setNodeStates(Graph &g, Eigen::VectorXf &states) const
     }
 }
 
-void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot) const
+void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot)
 {
     plot.displayMethod("Centralized");
     int nNodes = g.nodes.size();
-    Eigen::MatrixXf A_Matrix = dampingCoeff * (g.laplacianMatrix + epsilon * Eigen::MatrixXf::Identity(nNodes, nNodes));
-    Eigen::MatrixXf B_Matrix = stiffnessCoeff * (g.laplacianMatrix + epsilon * Eigen::MatrixXf::Identity(nNodes, nNodes));
+    Eigen::MatrixXf A_Matrix = dampingCoeff * (epsilon * Eigen::MatrixXf::Identity(nNodes, nNodes));
+    Eigen::MatrixXf B_Matrix = (g.laplacianMatrix + epsilon * Eigen::MatrixXf::Identity(nNodes, nNodes));
     Eigen::VectorXf x = getStateVector(g);
     Eigen::VectorXf x_dot = Eigen::VectorXf::Zero(nNodes);
     Eigen::VectorXf x_ddot(nNodes);
     double timeStep = double(simTime) / simSteps;
     for (int i{0}; i < simSteps + 1; i++)
     {
-        x_ddot = force.sinusoidalForce(i * timeStep) - A_Matrix * x_dot - B_Matrix * x;
+        x_ddot = force.sinCauchyForce(i * timeStep) - A_Matrix * x_dot - B_Matrix * x;
         // x_ddot = getForcing(i * timeStep, 1, 6.13602, nNodes) - A_Matrix * x_dot - B_Matrix * x;
-        x += (x_dot * timeStep);
         x_dot += (x_ddot * timeStep);
+        x += (x_dot * timeStep);
+
+        /*double energyVal = (.5 * x_dot.transpose()*x_ddot);
+        energyVal += + (.5 * x_dot.transpose()*g.laplacianMatrix*x); */
+
+        double energyVal = (.5 * x_dot.transpose()*Eigen::MatrixXf::Identity(nNodes, nNodes)*x_dot);
+        energyVal += (.5 * x.transpose()*g.laplacianMatrix*x); 
+        //energyValueHistory.push_back(energyVal);
+        energyValueHistory.push_back(energyVal);
+        XValueHistory.push_back(x[1]);
         setNodeStates(g, x);
+
+        double minEV = g.nodes[0]->z;
+        double maxEV = g.nodes[0]->z;
+
+        for(int i = 0; i < g.nodes.size(); i++){
+            if(g.nodes[i]->z > maxEV){
+                double maxEV = g.nodes[i]->z;
+            }
+            if(g.nodes[i]->z < minEV){
+                double minEV = g.nodes[i]->z;
+            }
+        }
         for (int j{0}; j < nNodes; j++)
         {
-            plot.plotNode(*g.nodes[j]);
+            plot.plotNode(*g.nodes[j], maxEV, minEV);
             plot.displayState(*g.nodes[j]);
         }
         // std::cout << x << std::endl
@@ -52,7 +79,15 @@ void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot) const
         plot.displayTime(std::to_string(i * timeStep) + " s");
         plot.displayPlot();
         usleep(1E+3 * timeStep);
+        if(i > 25000){
+            std::cout << "\n" << 100 * ((energyValueHistory[energyValueHistory.size() - 25000] - energyValueHistory.back()) / energyValueHistory.back());
+            //energyPlot::generateEnergyPlot(energyPlotStream, energyValueHistory);
+        }
     }
+    //plotEnergy();
+    energyPlot::generateEnergyPlot(energyPlotStream, energyValueHistory);
+    XPlot::generateXPlot(energyPlotStream, XValueHistory);
+
 }
 
 void Dynamics::runDecentralizedDynamics(std::vector<std::shared_ptr<Node>> &nodes, Force &force, Plot &plot) const
@@ -78,7 +113,7 @@ void Dynamics::runDecentralizedDynamics(std::vector<std::shared_ptr<Node>> &node
         {
             nodes[j]->z_old = nodes[j]->z;
             nodes[j]->z_dot_old = nodes[j]->z_dot;
-            plot.plotNode(*nodes[j]);
+            //plot.plotNode(*nodes[j]);
             plot.displayState(*nodes[j]);
         }
 
@@ -87,3 +122,7 @@ void Dynamics::runDecentralizedDynamics(std::vector<std::shared_ptr<Node>> &node
         usleep(1E+2 * timeStep);
     }
 }
+/*
+void Dynamics::plotEnergy(){
+    energyPlot::generateEnergyPlot(energyPlotStream, energyValueHistory);
+}*/
