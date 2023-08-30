@@ -13,113 +13,27 @@
 #include <string.h>
 #include <string>
 
-int findModeIndex(Eigen::VectorXf nums) {
-    std::unordered_map<float, float> freq;
-    int maxFreq = 0;
-    int modeIndex = -1;
-
-    // Count the frequency of each element
-    for (int i = 0; i < nums.size(); i++) {
-        freq[nums[i]]++;
-        if (freq[nums[i]] > maxFreq) {
-            maxFreq = freq[nums[i]];
-            modeIndex = i;
-        }
-    }
-    std::cout << "Mode FreqCount: " << maxFreq;
-    if (modeIndex != -1) {
-        std::cout << "\nMode Index: " << modeIndex << " Mode Value: " << nums[modeIndex] << std::endl;
-    } else {
-        std::cout << "\nNo mode found." << std::endl;
-    }
-    return modeIndex;
-}
-
-int findModeIndex(std::vector<double> nums) {
-    std::unordered_map<float, float> freq;
-    int maxFreq = 0;
-    int modeIndex = -1;
-
-    // Count the frequency of each element
-    for (int i = 0; i < nums.size(); i++) {
-        freq[nums[i]]++;
-        if (freq[nums[i]] > maxFreq) {
-            maxFreq = freq[nums[i]];
-            modeIndex = i;
-        }
-    }
-    std::cout << "Mode FreqCount: " << maxFreq;
-    if (modeIndex != -1) {
-        std::cout << "\nMode Index: " << modeIndex << " Mode Value: " << nums[modeIndex] << std::endl;
-    } else {
-        std::cout << "\nNo mode found." << std::endl;
-    }
-    return modeIndex;
-}
-
-void printEigenVal(std::vector<double> ev){
-    std::cout << "\n\n";
-    for(int i{0}; i < ev.size(); i++){
-        std::cout << ev[i] << ", ";
-    }
-}
-
-void printEigenVal(Eigen::VectorXf ev){
-    std::cout << "\n\n";
-    for(int i{0}; i < ev.size(); i++){
-        std::cout << ev[i] << ", ";
-    }
-}
-
 int main(int argc, char *argv[]){
-
-    int gridSize{10};
-    int maxIter{10000};
+    int gridSize;
+    double alpha, freq;
+    bool resultsGiven;
     bool weightConstraint{true};
-    bool resultsGiven{false};
 
-    if(argc==2){
+    if(argc==5){
         gridSize = std::stoi(argv[1]);
+        resultsGiven = std::stoi(argv[2]);
+        alpha = std::stof(argv[3]);
+        freq = std::stof(argv[4]);
     }
-    else if(argc==3){
-        gridSize = std::stoi(argv[1]);
-        maxIter = std::stoi(argv[2]);
+    else{
+        return 0;
     }
-    else if(argc==4){
-        gridSize = std::stoi(argv[1]);
-        maxIter = std::stoi(argv[2]);
-        weightConstraint = std::stoi(argv[3]);
-    }
-    else if(argc>4){
-        gridSize = std::stoi(argv[1]);
-        maxIter = std::stoi(argv[2]);
-        weightConstraint = std::stoi(argv[3]);
-        resultsGiven = true;
-    }
-    
-    std::vector<double> ev;
+    std::cout << alpha << " " << freq;
     std::shared_ptr<Graph> graphInit = std::make_shared<Graph>();
     graphInit->constructSimpleGraph(gridSize);
+    std::vector<double> ev;
 
-    if(!resultsGiven && maxIter > 0){
-
-        printEigenVal(graphInit->eigenValues);
-
-        GradientDescent gdObj(graphInit,weightConstraint);
-        gdObj.runNStepDescent(maxIter);
-        gdObj.destroyHistogram();
-        gdObj.destroyObjectivePlot();
-
-        ev = gdObj.returnEigenvalues();
-        
-        printEigenVal(ev);
-    }
-    else if(!resultsGiven && maxIter == 0){
-        graphInit->eigenDecompose();
-        GradientDescent gdObj(graphInit,weightConstraint);
-        gdObj.plotHistogram();
-    }
-    else if(resultsGiven){
+    if(resultsGiven){
         std::string line;
         std::ifstream myFile("LapResults.txt");
         while(getline(myFile, line))
@@ -145,34 +59,33 @@ int main(int argc, char *argv[]){
                 counter++;
             }
         }
-        graphInit->eigenDecompose();
-        GradientDescent gdObj(graphInit,weightConstraint);
-        gdObj.plotHistogram();
     }
 
-    float chosenEigVal = 1;//ev[findModeIndex(ev)];
-     
-    int MAX_X = 10;
-    int MAX_Y = 10;
+    graphInit->eigenDecompose();
+    GradientDescent gdObj(graphInit,weightConstraint);
+    gdObj.plotHistogram();
+
+    int MAX_X = gridSize;
+    int MAX_Y = gridSize;
     int PLOT_SCALE = 40;
     int vPad = 2;
     int hPad = 2;
     double damping{0.1}, stiffness{5}, epsilon{0.01};
     double amp{1};
     bool decentralizedAlg = false;
+    
+    freq = sqrt(freq);
  
     // Generate plot
-    Plot my_plot("State Plot - Chosen EigVal: " + std::to_string(chosenEigVal), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
+    Plot my_plot("State Plot - Chosen EigVal: " + std::to_string(freq), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
     my_plot.plotGraph(*graphInit);
     my_plot.displayPlot(true);
          
-    double freq{sqrt(chosenEigVal)};
-    Force my_force(amp, freq, graphInit->nodes.size());
+    Force my_force(amp, freq, graphInit->nodes.size(), alpha);
     my_force.insertForceElement(1);
      
-     
     // Simulate dynamics
-    int simulationTime{2500};
+    int simulationTime{5000};
     int simulationSteps{simulationTime * 100};
     Dynamics my_sim(simulationTime, simulationSteps, damping, stiffness);
     if (decentralizedAlg)
