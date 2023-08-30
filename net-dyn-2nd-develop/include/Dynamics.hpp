@@ -26,9 +26,11 @@ public:
 
     void runCentralizedDynamics(Graph &g, Force &force, Plot &plot);
     void runDecentralizedDynamics(std::vector<std::shared_ptr<Node>> &nodes, Force &force, Plot &plot) const;
+    std::vector<double> calculateNodeVals(std::vector<std::vector<double>> XHistory, int startTime, int windowSize);
+    bool determineSteadyState(std::vector<double> energyValueHistory, int iterationRange, double percentDifference);
     Gnuplot energyPlotStream;
     std::vector<double> energyValueHistory;
-    std::vector<double> XValueHistory;
+    std::vector<double> XValueHistory1;
 
 };
 

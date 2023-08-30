@@ -4,7 +4,7 @@
 #include <cmath>
 #include <iostream>
 
-Force::Force(double amp, double freq, int size) : amplitude{amp}, frequency{freq}, size{size} {}
+Force::Force(double amp, double freq, int size, double alpha) : amplitude{amp}, frequency{freq}, size{size}, alpha{alpha} {}
 
 void Force::insertForceElement(int idx)
 {
@@ -120,7 +120,7 @@ Eigen::VectorXf Force::sinCauchyForce(double t)
     double func = 0;
     for(int i = 0; i < 100; i++){
         //func = func + sin(2*M_PI*frequency*freq_vec[i]*t);
-        func = func + sin(inverse_of_normal_cdf(freq_vec[i],4.1,0.005*2)*t);
+        func = func + sin(inverse_of_normal_cdf(freq_vec[i], frequency, alpha * sqrt(frequency))*t);
         //std::cout << inverse_of_normal_cdf(freq_vec[i],4.1,0.005*2) << " " <<  freq_vec[i] << "\n";       //func = func + sin(frequency*freq_vec[i]*t);
     }
     for (int i{0}; i < nonZeroElements.size(); i++)

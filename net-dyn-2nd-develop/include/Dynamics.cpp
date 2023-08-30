@@ -40,22 +40,28 @@ void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot)
     Eigen::VectorXf x = getStateVector(g);
     Eigen::VectorXf x_dot = Eigen::VectorXf::Zero(nNodes);
     Eigen::VectorXf x_ddot(nNodes);
-    double timeStep = double(simTime) / simSteps;
+    double timeStep = double(simTime) / simSteps;    
+
+    //std::vector<double> XValueHistory[g.nodes.size()][simSteps];
+    std::vector<std::vector<double>> XValueHistory(g.nodes.size(), std::vector<double> (simSteps, 0));
+
     for (int i{0}; i < simSteps + 1; i++)
     {
         x_ddot = force.sinCauchyForce(i * timeStep) - A_Matrix * x_dot - B_Matrix * x;
-        // x_ddot = getForcing(i * timeStep, 1, 6.13602, nNodes) - A_Matrix * x_dot - B_Matrix * x;
         x_dot += (x_ddot * timeStep);
         x += (x_dot * timeStep);
 
-        /*double energyVal = (.5 * x_dot.transpose()*x_ddot);
-        energyVal += + (.5 * x_dot.transpose()*g.laplacianMatrix*x); */
-
         double energyVal = (.5 * x_dot.transpose()*Eigen::MatrixXf::Identity(nNodes, nNodes)*x_dot);
         energyVal += (.5 * x.transpose()*g.laplacianMatrix*x); 
-        //energyValueHistory.push_back(energyVal);
+
         energyValueHistory.push_back(energyVal);
-        XValueHistory.push_back(x[1]);
+
+        for(int j{0}; j < g.nodes.size(); j++){
+            XValueHistory[j][i] = (double)x[j];
+        }
+
+        XValueHistory1.push_back(x[1]);
+
         setNodeStates(g, x);
 
         double minEV = g.nodes[0]->z;
@@ -86,8 +92,30 @@ void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot)
     }
     //plotEnergy();
     energyPlot::generateEnergyPlot(energyPlotStream, energyValueHistory);
-    XPlot::generateXPlot(energyPlotStream, XValueHistory);
+    XPlot::generateXPlot(energyPlotStream, XValueHistory1);
+    calculateNodeVals(XValueHistory, 10, 10);
+}
 
+std::vector<double> Dynamics::calculateNodeVals(std::vector<std::vector<double>> XValueHistory, int startTime, int windowSize){ // end time = numOfWindows*windowSize + startTime
+    std::vector<double> nodeMax(XValueHistory.size(), 0);
+    for(int i = startTime; i < startTime + windowSize; i++){
+        for(int j{0}; j < XValueHistory.size(); j++){
+            if(nodeMax[j] < abs(XValueHistory[j][i])){
+                nodeMax[j] = abs(XValueHistory[j][i]);
+            }
+        }
+    }
+    return nodeMax;
+}
+
+bool Dynamics::determineSteadyState(std::vector<double> energyValueHistory, int iterationRange, double percentDifference){
+    bool withinPercent = false;
+    double changeFromRange = ((energyValueHistory[energyValueHistory.size() - iterationRange - 1] - energyValueHistory.back()) / energyValueHistory.back());
+    double changeFromPrevious = ((energyValueHistory[energyValueHistory.size() - 2] - energyValueHistory.back()) / energyValueHistory.back());
+    if((changeFromRange - changeFromPrevious) / changeFromPrevious < 0.1){
+        withinPercent = true;
+    }
+    return withinPercent;
 }
 
 void Dynamics::runDecentralizedDynamics(std::vector<std::shared_ptr<Node>> &nodes, Force &force, Plot &plot) const
@@ -122,7 +150,3 @@ void Dynamics::runDecentralizedDynamics(std::vector<std::shared_ptr<Node>> &node
         usleep(1E+2 * timeStep);
     }
 }
-/*
-void Dynamics::plotEnergy(){
-    energyPlot::generateEnergyPlot(energyPlotStream, energyValueHistory);
-}*/
