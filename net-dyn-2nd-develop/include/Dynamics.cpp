@@ -7,9 +7,11 @@
 #include <memory>
 #include <numeric>
 #include <vector>
+#include <string>
+#include <string.h>
 
-Dynamics::Dynamics(int sim_time, int sim_steps, double damping, double stiffness)
-    : simTime{sim_time}, simSteps{sim_steps}, dampingCoeff{damping}, stiffnessCoeff{stiffness} {}
+Dynamics::Dynamics(int sim_time, int sim_steps, double damping, double stiffness, double epsilon, int simNum, int seed)
+    : simTime{sim_time}, simSteps{sim_steps}, dampingCoeff{damping}, stiffnessCoeff{stiffness}, epsilon{epsilon}, simNum{simNum}, seed{seed} {}
 
 Eigen::VectorXf Dynamics::getStateVector(Graph &g) const
 {
@@ -31,11 +33,52 @@ void Dynamics::setNodeStates(Graph &g, Eigen::VectorXf &states) const
     }
 }
 
+void Dynamics::writeNodeAvgFile(std::vector<double> nodeValsMax, double avg){
+    std::string fileName = "NodeAvgResults";
+    fileName.append(std::to_string((simNum +1)%2));
+    fileName = fileName + "-";
+    fileName.append(std::to_string(seed));
+    fileName = fileName + ".txt";
+    std::string line;
+    std::ofstream myFile(fileName);
+    for(int i{0}; i <= nodeValsMax.size(); i++){
+        if(i < nodeValsMax.size()){
+            myFile << "Node " << i << ": " << nodeValsMax[i] << "\n";
+        }
+        else{
+            myFile << "Node Avg: " << ": " << avg;
+        }
+    }
+    myFile.close();
+}
+
+void Dynamics::writeNodeValuesFile(std::vector<std::vector<double>> XValueHistory, int nodeSize, int simSteps){
+    std::string fileName = "NodeValueResults";
+    fileName.append(std::to_string((simNum + 1)%2));
+    fileName = fileName + "-";
+    fileName.append(std::to_string(seed));
+    fileName = fileName + ".txt";
+    std::string line;
+    std::ofstream myFile(fileName);
+
+    for(int j{0}; j < nodeSize; j++){
+        myFile << "Node " << j << ":\n";
+        for (int i{0}; i < simSteps; i++)
+        {
+            if(i % 99 == 0){
+                myFile << XValueHistory[j][i] << ", ";
+            }
+        }
+        myFile << "\n\n\n";
+    }
+    myFile.close();
+}
+
 void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot)
 {
     plot.displayMethod("Centralized");
     int nNodes = g.nodes.size();
-    Eigen::MatrixXf A_Matrix = dampingCoeff * (epsilon * Eigen::MatrixXf::Identity(nNodes, nNodes));
+    Eigen::MatrixXf A_Matrix = dampingCoeff * (Eigen::MatrixXf::Identity(nNodes, nNodes));
     Eigen::MatrixXf B_Matrix = (g.laplacianMatrix + epsilon * Eigen::MatrixXf::Identity(nNodes, nNodes));
     Eigen::VectorXf x = getStateVector(g);
     Eigen::VectorXf x_dot = Eigen::VectorXf::Zero(nNodes);
@@ -47,6 +90,7 @@ void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot)
 
     for (int i{0}; i < simSteps + 1; i++)
     {
+        //x_ddot = force.sinCauchyForce(i * timeStep) - A_Matrix * x_dot - B_Matrix * x;
         x_ddot = force.sinCauchyForce(i * timeStep) - A_Matrix * x_dot - B_Matrix * x;
         x_dot += (x_ddot * timeStep);
         x += (x_dot * timeStep);
@@ -85,15 +129,39 @@ void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot)
         plot.displayTime(std::to_string(i * timeStep) + " s");
         plot.displayPlot();
         usleep(1E+3 * timeStep);
-        if(i > 25000){
+        /*if(i > 25000){
             std::cout << "\n" << 100 * ((energyValueHistory[energyValueHistory.size() - 25000] - energyValueHistory.back()) / energyValueHistory.back());
             //energyPlot::generateEnergyPlot(energyPlotStream, energyValueHistory);
+        }*/
+    }
+    
+    //int numOfWindows = 5;
+    //int widthOfWindow = 20000;
+    //int startTime = 400000;
+    int numOfWindows = 5;
+    int widthOfWindow = 20000;
+    int startTime = 400000;
+    std::vector<double> nodeValsMax(nNodes, 0);
+    for(int i{0}; i < numOfWindows; i++){
+        std::vector<double> nodeMaxVector = calculateNodeVals(XValueHistory, startTime + i * widthOfWindow, widthOfWindow);
+        for(int j{0}; j < nodeValsMax.size(); j++){
+            nodeValsMax[j] += (nodeMaxVector[j]/numOfWindows);
         }
     }
-    //plotEnergy();
-    energyPlot::generateEnergyPlot(energyPlotStream, energyValueHistory);
-    XPlot::generateXPlot(energyPlotStream, XValueHistory1);
-    calculateNodeVals(XValueHistory, 10, 10);
+    double avg = 0;
+    for(int i{0}; i <= nodeValsMax.size(); i++){
+        if(i < nodeValsMax.size()){
+            avg += nodeValsMax[i];
+        }
+        else{
+            avg = avg / nodeValsMax.size();
+        }
+    }
+    writeNodeAvgFile(nodeValsMax, avg);
+    writeNodeValuesFile(XValueHistory, g.nodes.size(), simSteps+1);
+
+    energyPlot::generateEnergyPlot(energyPlotStream, energyValueHistory, (simNum + 1)%2, seed);
+    XPlot::generateXPlot(energyPlotStream, XValueHistory1, (simNum + 1)%2, seed);
 }
 
 std::vector<double> Dynamics::calculateNodeVals(std::vector<std::vector<double>> XValueHistory, int startTime, int windowSize){ // end time = numOfWindows*windowSize + startTime

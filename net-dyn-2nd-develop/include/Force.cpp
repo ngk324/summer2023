@@ -4,7 +4,7 @@
 #include <cmath>
 #include <iostream>
 
-Force::Force(double amp, double freq, int size, double alpha) : amplitude{amp}, frequency{freq}, size{size}, alpha{alpha} {}
+Force::Force(double amp, double freq, int size, double alpha, int seedNum) : amplitude{amp}, frequency{freq}, size{size}, alpha{alpha}, seedNum{seedNum} {}
 
 void Force::insertForceElement(int idx)
 {
@@ -102,27 +102,51 @@ Eigen::VectorXf Force::sinusoidalForce(double t)
 }*/
 
 double Force::inverse_of_normal_cdf(const double p, const double mu, const double sigma){
-    double inverse = mu + sigma * tan((M_PI)*(p -.5));
+    double inverse = mu + sigma * tan(M_PI*(p - .5));
     return inverse;
 }
 
 Eigen::VectorXf Force::sinCauchyForce(double t)
 {
+    srand(seedNum);
     Eigen::VectorXf force(size);
     for (int i{0}; i < size; i++)
     {
         force(i) = 0;
     }
     std::vector<double> freq_vec;
-    for(int i = 0; i < 100; i++){
+    for(int i = 0; i < 10; i++){
         freq_vec.push_back(((double)rand() / (double)RAND_MAX));
     }
     double func = 0;
-    for(int i = 0; i < 100; i++){
+    for(int i = 0; i < 10; i++){
         //func = func + sin(2*M_PI*frequency*freq_vec[i]*t);
-        func = func + sin(inverse_of_normal_cdf(freq_vec[i], frequency, alpha * sqrt(frequency))*t);
+        func = func + sin(inverse_of_normal_cdf(freq_vec[i], frequency, alpha * frequency)*t);
         //std::cout << inverse_of_normal_cdf(freq_vec[i],4.1,0.005*2) << " " <<  freq_vec[i] << "\n";       //func = func + sin(frequency*freq_vec[i]*t);
     }
+    for (int i{0}; i < nonZeroElements.size(); i++)
+    {
+        int idx = nonZeroElements[i];
+        force(idx) = amplitude*func;
+    }
+    return force;
+}
+
+Eigen::VectorXf Force::sinCauchyForceNew(double t)
+{
+    srand(seedNum);
+    Eigen::VectorXf force(size);
+    for (int i{0}; i < size; i++)
+    {
+        force(i) = 0;
+    }
+
+    double freq = (((double)rand() / (double)RAND_MAX));
+
+ //std::cout << "Sampled Freq: " << freq << "\n";
+
+    double func = sin(inverse_of_normal_cdf(freq, frequency, alpha * frequency)*t);
+
     for (int i{0}; i < nonZeroElements.size(); i++)
     {
         int idx = nonZeroElements[i];

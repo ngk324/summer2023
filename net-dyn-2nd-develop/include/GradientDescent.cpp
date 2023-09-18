@@ -11,8 +11,6 @@ GradientDescent::GradientDescent(std::shared_ptr<Graph> initGraph, bool weightCo
     gradientStep *= pow(initGraph->connectivityMatrix.sum()/2,2);
     // gradientStep = 1/pow(initGraph->connectivityMatrix.sum()/2,2);
     minGradNorm *= pow(initGraph->connectivityMatrix.sum(),2);
-    std::cout << "gradientStep: " << gradientStep << std::endl;
-    std::cout << "minGradNorm: " << minGradNorm << std::endl;
     graphHistory.push_back(initGraph);
 }
 

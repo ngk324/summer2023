@@ -17,12 +17,17 @@ public:
     int simSteps;
     double dampingCoeff;
     double stiffnessCoeff;
-    double epsilon{0.01};
+    double epsilon;
+    int simNum;
+    int seed;
 
-    Dynamics(int sim_time, int sim_steps, double damping, double stiffness);
+    Dynamics(int sim_time, int sim_steps, double damping, double stiffness, double epsilon, int simNum, int seed);
 
     Eigen::VectorXf getStateVector(Graph &g) const;
     void setNodeStates(Graph &g, Eigen::VectorXf &states) const;
+
+    void writeNodeAvgFile(std::vector<double> nodeValsMax, double avg);
+    void writeNodeValuesFile(std::vector<std::vector<double>> XValueHistory, int nodeSize, int simSteps);
 
     void runCentralizedDynamics(Graph &g, Force &force, Plot &plot);
     void runDecentralizedDynamics(std::vector<std::shared_ptr<Node>> &nodes, Force &force, Plot &plot) const;
