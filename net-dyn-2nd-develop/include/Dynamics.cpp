@@ -1,6 +1,7 @@
 #include "Dynamics.hpp"
 #include "EnergyPlot.hpp"
 #include "XPlot.hpp"
+#include "TwoNormPlot.hpp"
 
 #include <unistd.h>
 #include <algorithm>
@@ -10,8 +11,8 @@
 #include <string>
 #include <string.h>
 
-Dynamics::Dynamics(int sim_time, int sim_steps, double damping, double stiffness, double epsilon, int simNum, int seed)
-    : simTime{sim_time}, simSteps{sim_steps}, dampingCoeff{damping}, stiffnessCoeff{stiffness}, epsilon{epsilon}, simNum{simNum}, seed{seed} {}
+Dynamics::Dynamics(int sim_time, int sim_steps, double damping, double stiffness, double epsilon, int simNum, int seed, double frequency, double alpha, double randProb)
+    : simTime{sim_time}, simSteps{sim_steps}, dampingCoeff{damping}, stiffnessCoeff{stiffness}, epsilon{epsilon}, simNum{simNum}, seed{seed}, frequency{frequency}, alpha{alpha}, randProb{randProb} {}
 
 Eigen::VectorXf Dynamics::getStateVector(Graph &g) const
 {
@@ -52,6 +53,18 @@ void Dynamics::writeNodeAvgFile(std::vector<double> nodeValsMax, double avg){
     myFile.close();
 }
 
+void Dynamics::writeTwoNormAvgFile(double avg){
+    std::string fileName = "TwoNormResults";
+    fileName.append(std::to_string((simNum +1)%2));
+    fileName = fileName + "-";
+    fileName.append(std::to_string(seed));
+    fileName = fileName + ".txt";
+    std::string line;
+    std::ofstream myFile(fileName);
+    myFile << "Two Norm Avg: " << avg;
+    myFile.close();
+}
+
 void Dynamics::writeNodeValuesFile(std::vector<std::vector<double>> XValueHistory, int nodeSize, int simSteps){
     std::string fileName = "NodeValueResults";
     fileName.append(std::to_string((simNum + 1)%2));
@@ -74,6 +87,19 @@ void Dynamics::writeNodeValuesFile(std::vector<std::vector<double>> XValueHistor
     myFile.close();
 }
 
+double Dynamics::inverse_of_normal_cdf(const double p, const double mu, const double sigma){
+    double inverse = mu + sigma * tan(M_PI*(p - .5));
+    return inverse;
+}
+
+void Dynamics::write_file_results(std::string print){
+    std::string fileName = "A-TOTAL-TwoNormResults.txt";
+    std::ofstream log;
+    log.open(fileName, std::ofstream::app);
+    log << "\n" << print;
+    log.close();
+}
+
 void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot)
 {
     plot.displayMethod("Centralized");
@@ -86,12 +112,22 @@ void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot)
     double timeStep = double(simTime) / simSteps;    
 
     //std::vector<double> XValueHistory[g.nodes.size()][simSteps];
-    std::vector<std::vector<double>> XValueHistory(g.nodes.size(), std::vector<double> (simSteps, 0));
+    std::vector<std::vector<double>> XValueHistory(g.nodes.size(), std::vector<double> (simSteps, 0.0));
+    std::vector<double> twoNorm;
+
+    std::cout << "Prob used for sampling: " << randProb << std::endl;
+    std::string probUsed = "Prob used for sampling: " + std::to_string(randProb);
+    write_file_results(probUsed);
+
+    double freq_used = inverse_of_normal_cdf(randProb, frequency, alpha);
+    std::cout << "Freq from sampling: " << freq_used << std::endl;
+    std::string freqFromSample = "Freq from sampling: " + std::to_string(freq_used);
+    write_file_results(freqFromSample);
 
     for (int i{0}; i < simSteps + 1; i++)
     {
-        //x_ddot = force.sinCauchyForce(i * timeStep) - A_Matrix * x_dot - B_Matrix * x;
-        x_ddot = force.sinCauchyForce(i * timeStep) - A_Matrix * x_dot - B_Matrix * x;
+        //x_ddot = force.sinCauchyForceNew(i * timeStep) - A_Matrix * x_dot - B_Matrix * x;
+        x_ddot = force.sinCauchyForceNew(i * timeStep, freq_used) - A_Matrix * x_dot - B_Matrix * x;
         x_dot += (x_ddot * timeStep);
         x += (x_dot * timeStep);
 
@@ -103,6 +139,8 @@ void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot)
         for(int j{0}; j < g.nodes.size(); j++){
             XValueHistory[j][i] = (double)x[j];
         }
+
+        twoNorm.push_back((double)std::inner_product(x.begin(), x.end(), x.begin(), 0.0));
 
         XValueHistory1.push_back(x[1]);
 
@@ -135,17 +173,19 @@ void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot)
         }*/
     }
     
-    //int numOfWindows = 5;
-    //int widthOfWindow = 20000;
-    //int startTime = 400000;
     int numOfWindows = 5;
     int widthOfWindow = 20000;
-    int startTime = 400000;
+    int startTime = 900000;
+    /*int numOfWindows = 5;
+    int widthOfWindow = 200;
+    int startTime = 0;*/
     std::vector<double> nodeValsMax(nNodes, 0);
+    double twoNormAvg = 0;
     for(int i{0}; i < numOfWindows; i++){
         std::vector<double> nodeMaxVector = calculateNodeVals(XValueHistory, startTime + i * widthOfWindow, widthOfWindow);
+        twoNormAvg += (calculateTwoNormVals(twoNorm, startTime + i * widthOfWindow, widthOfWindow) / (double) numOfWindows);
         for(int j{0}; j < nodeValsMax.size(); j++){
-            nodeValsMax[j] += (nodeMaxVector[j]/numOfWindows);
+            nodeValsMax[j] += (nodeMaxVector[j]/ (double) numOfWindows);
         }
     }
     double avg = 0;
@@ -158,10 +198,14 @@ void Dynamics::runCentralizedDynamics(Graph &g, Force &force, Plot &plot)
         }
     }
     writeNodeAvgFile(nodeValsMax, avg);
+    writeTwoNormAvgFile(twoNormAvg);
     writeNodeValuesFile(XValueHistory, g.nodes.size(), simSteps+1);
+    std::string twoNormVal = "Two Norm Avg: " + std::to_string(twoNormAvg);
+    write_file_results(twoNormVal);
 
     energyPlot::generateEnergyPlot(energyPlotStream, energyValueHistory, (simNum + 1)%2, seed);
-    XPlot::generateXPlot(energyPlotStream, XValueHistory1, (simNum + 1)%2, seed);
+    //XPlot::generateXPlot(energyPlotStream, XValueHistory1, (simNum + 1)%2, seed);
+    twoNormPlot::generateTwoNormPlot(energyPlotStream, twoNorm, (simNum + 1)%2, seed);
 }
 
 std::vector<double> Dynamics::calculateNodeVals(std::vector<std::vector<double>> XValueHistory, int startTime, int windowSize){ // end time = numOfWindows*windowSize + startTime
@@ -171,6 +215,16 @@ std::vector<double> Dynamics::calculateNodeVals(std::vector<std::vector<double>>
             if(nodeMax[j] < abs(XValueHistory[j][i])){
                 nodeMax[j] = abs(XValueHistory[j][i]);
             }
+        }
+    }
+    return nodeMax;
+}
+
+double Dynamics::calculateTwoNormVals(std::vector<double> XValueHistory, int startTime, int windowSize){ // end time = numOfWindows*windowSize + startTime
+    double nodeMax = XValueHistory[0];
+    for(int i = startTime; i < startTime + windowSize; i++){
+        if(nodeMax < abs(XValueHistory[i])){
+            nodeMax = abs(XValueHistory[i]);
         }
     }
     return nodeMax;
