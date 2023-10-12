@@ -81,7 +81,7 @@ double plotHistogramFirst(const std::vector<double>& values)
     // Create a window and display the histogram
     cv::namedWindow("Histogram", cv::WINDOW_NORMAL);
     cv::imshow("Histogram", histImage);
-    std::__cxx11::basic_string<char> name = "tests/Iteration_scaled2"+std::to_string(itNum) + ".jpg";
+    std::__cxx11::basic_string<char> name = "tests/Iteration_scaled2"+std::std::to_string(itNum) + ".jpg";
     cv::imwrite(name, histImage);  
     cv::waitKey(0);
     cv::destroyAllWindows();*/
@@ -122,14 +122,61 @@ std::shared_ptr<Graph> createGraphFromTxt(std::shared_ptr<Graph> graphInit, int 
     return graphInit;
 }
 
+std::shared_ptr<Graph> createGraphFromTxtInit(std::shared_ptr<Graph> graphInit, int gridSize){
 
-void oneRun(bool resultsGiven, int gridSize, double alpha, bool weightConstraint, bool runManyTimes, int seedNum, int simNum){
+    std::vector<double> ev;
+    std::string line;
+    std::ifstream myFile("LapResultsInit.txt");
+    while(getline(myFile, line))
+    {
+        std::istringstream lineStream(line);
+        double first;
+        lineStream >> first;
+        ev.push_back(first);
+    }
+    int counter = 0;
+    for (int i{0}; i < gridSize*gridSize; i++)
+    {
+        for (int j = 0; j < gridSize*gridSize; j++)
+        {
+            if(i == j){
+                graphInit->laplacianMatrix(i,j) = ev[counter];
+                graphInit->degreeMatrix(i,j) = ev[counter];
+            }
+            else{
+                graphInit->laplacianMatrix(i,j) = ev[counter];
+                graphInit->adjacencyMatrix(i,j) = -ev[counter];
+            }
+            counter++;
+        }
+    }
+    return graphInit;
+}
+
+int get_rand(int size){
+    int num = (double)rand() * 1.0 / (double)RAND_MAX * (double)(size);
+    return num;
+}
+
+void write_file_results(std::string print){
+    std::string fileName = "A-TOTAL-TwoNormResults.txt";
+    std::ofstream log;
+    log.open(fileName, std::ofstream::app);
+    log << "\n" << print;
+    log.close();
+}
+
+
+void oneRun(bool resultsGiven, int gridSize, double alpha, bool weightConstraint, bool runManyTimes, int seedNum, int simNum, int idx, int evNum, double randProb){
     std::shared_ptr<Graph> graphInit = std::make_shared<Graph>();
     graphInit->constructSimpleGraph(gridSize);
     std::vector<double> ev;
 
     if(resultsGiven){
-       graphInit = createGraphFromTxt(graphInit, gridSize);
+       graphInit = createGraphFromTxt(graphInit, gridSize); 
+    }
+    else{
+        graphInit = createGraphFromTxtInit(graphInit, gridSize); 
     }
 
     graphInit->eigenDecompose();
@@ -152,8 +199,13 @@ void oneRun(bool resultsGiven, int gridSize, double alpha, bool weightConstraint
     double amp{1};
     
     //double freq = sqrt(mean);
-    double freq = sqrt(plotHistogramFirst(ev));
-    std::cout << freq;
+    //double freq = sqrt(plotHistogramFirst(ev));
+    //std::cout << freq;
+    
+    double freq = sqrt(ev[evNum]);
+    std::cout << "Freq choosen: " << freq << std::endl;
+    std::string printFreqChosen = "Freq choosen: " + std::to_string(freq);
+    write_file_results(printFreqChosen);
  
     // Generate plot
     Plot my_plot("State Plot - Chosen EigVal: " + std::to_string(freq), PLOT_SCALE, vPad, hPad, MAX_X, MAX_Y);
@@ -165,13 +217,13 @@ void oneRun(bool resultsGiven, int gridSize, double alpha, bool weightConstraint
         my_plot.displayPlot(true);
     }
          
-    Force my_force(amp, freq, graphInit->nodes.size(), alpha, seedNum);
-    my_force.insertForceElement(1);
-     
+    Force my_force(amp,freq, graphInit->nodes.size(), alpha);
+    my_force.insertForceElement(idx);
+    
     // Simulate dynamics
-    int simulationTime{5000};
+    int simulationTime{10000};
     int simulationSteps{simulationTime * 100};
-    Dynamics my_sim(simulationTime, simulationSteps, damping, stiffness, epsilon, simNum, seedNum);
+    Dynamics my_sim(simulationTime, simulationSteps, damping, stiffness, epsilon, simNum, seedNum, freq, alpha, randProb);
     my_sim.runCentralizedDynamics(*graphInit, my_force, my_plot);
     if(runManyTimes){
         my_plot.displayPlot(false);
@@ -183,10 +235,31 @@ void oneRun(bool resultsGiven, int gridSize, double alpha, bool weightConstraint
 
 void runNTimes(int runs, int gridSize, double alpha, bool weightConstraint){
     int counter = 0;
+    int idx = get_rand(gridSize*gridSize);
+    int evNum = get_rand(gridSize*gridSize);
     for(int i = 1; i < runs*2 + 1; i++){
-        oneRun((i-1)%2, gridSize, alpha, weightConstraint, true, 10+counter, i);
+        double randProb = (((double)rand() / (double)RAND_MAX));
+        if(i % 2 == 1){
+            std::cout << "\n\n\nBefore Gradient Descent" << std::endl;
+            std::string gradient = "\n\n\nBefore Gradient Descent";
+            write_file_results(gradient);
+        }
+        else{
+            std::cout << "\n\n\nAfter Gradient Descent" << std::endl;
+            std::string gradient = "\n\n\nAfter Gradient Descent";
+            write_file_results(gradient);
+        }
+        std::cout << "EV #: " << evNum << std::endl;
+        std::string evNumS = "EV #: " + std::to_string(evNum);
+        write_file_results(evNumS);
+        std::cout << "Node force applied: " << idx << std::endl;
+        std::string nodeForceApp = "Node force applied: " + std::to_string(idx);
+        write_file_results(nodeForceApp);
+        oneRun((i-1)%2, gridSize, alpha, weightConstraint, true, 10+counter, i, idx, evNum, randProb);
         if(i % 2 == 0){
             counter++;
+            idx = get_rand(gridSize*gridSize);
+            evNum = get_rand(gridSize*gridSize);
         }
     }
 }
@@ -200,13 +273,18 @@ int main(int argc, char *argv[]){
     if(argc==3){
         gridSize = std::stoi(argv[1]);
         alpha = std::stof(argv[2]);
-        runNTimes(1, gridSize, alpha, weightConstraint);
+        runNTimes(32, gridSize, alpha, weightConstraint);
     }
     else if(argc==4){
         gridSize = std::stoi(argv[1]);
         resultsGiven = std::stoi(argv[2]);
         alpha = std::stof(argv[3]);
-        oneRun(resultsGiven, gridSize, alpha, weightConstraint, false, 15, 0);
+        int idx = get_rand(gridSize*gridSize);
+        int evNum = get_rand(gridSize*gridSize);
+        double randProb = (((double)rand() / (double)RAND_MAX));
+        std::cout << " EV #: " << evNum << std::endl;
+        std::cout << " Node force applied: " << idx << std::endl;
+        oneRun(resultsGiven, gridSize, alpha, weightConstraint, false, 15, 0, idx, evNum, randProb);
     }
     else{
         return 0;
