@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace energyPlot{
-    void generateEnergyPlot(Gnuplot &plotEnergy, std::vector<double> &energyValues, int simNum, int seed);
+    void generateEnergyPlot(Gnuplot &plotEnergy, std::vector<double> &energyValues);
 }
 
 #endif

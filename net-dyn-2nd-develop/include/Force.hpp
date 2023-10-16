@@ -8,12 +8,10 @@ class Force
 {
 public:
     double amplitude;
-    double frequency;
     int size;
-    double alpha;
     std::vector<int> nonZeroElements;
 
-    Force(double amp, double freq, int size, double alpha);
+    Force(double amp, int size);
 
     void insertForceElement(int idx);
 

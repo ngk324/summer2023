@@ -4,8 +4,11 @@
 #include <string>
 #include <string.h>
 
+#include "gdMain.hpp"
+
+
 namespace twoNormPlot{
-    void generateTwoNormPlot(Gnuplot &plotTwoNorm, std::vector<double> &twoNormValues, int simNum, int seed){
+    void generateTwoNormPlot(Gnuplot &plotTwoNorm, std::vector<double> &twoNormValues){
 
         double minVal = *std::min_element(twoNormValues.begin(), twoNormValues.end());
         double maxVal = *std::max_element(twoNormValues.begin(), twoNormValues.end());
@@ -29,11 +32,11 @@ namespace twoNormPlot{
 
         std::string plotName;
 
-        if(simNum == 0){
-            plotName="set output 'Before-" + std::to_string(seed) +  "-TwoNorm-Plot.png'\n";
+        if(beforeGrad){
+            plotName="set output 'Before-" + std::to_string(simNum) +  "-TwoNorm-Plot.png'\n";
         } 
         else{
-            plotName= "set output 'After-" + std::to_string(seed) +  "-TwoNorm-Plot.png'\n";
+            plotName= "set output 'After-" + std::to_string(simNum) +  "-TwoNorm-Plot.png'\n";
         }
 
         plotTwoNorm << "set terminal png\n";

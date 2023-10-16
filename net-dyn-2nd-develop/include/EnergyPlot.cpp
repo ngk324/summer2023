@@ -4,8 +4,11 @@
 #include <string>
 #include <string.h>
 
+#include "gdMain.hpp"
+
+
 namespace energyPlot{
-    void generateEnergyPlot(Gnuplot &plotEnergy, std::vector<double> &energyValues, int simNum, int seed){
+    void generateEnergyPlot(Gnuplot &plotEnergy, std::vector<double> &energyValues){
 
         double minVal = *std::min_element(energyValues.begin(), energyValues.end());
         double maxVal = *std::max_element(energyValues.begin(), energyValues.end());
@@ -29,11 +32,11 @@ namespace energyPlot{
 
         std::string plotName;
 
-        if(simNum == 0){
-            plotName="set output 'Before-" + std::to_string(seed) +  "Energy-Plot.png'\n";
+        if(beforeGrad){
+            plotName="set output 'Before-" + std::to_string(simNum) +  "-Energy-Plot.png'\n";
         } 
         else{
-            plotName= "set output 'After-" + std::to_string(seed) +  "Energy-Plot.png'\n";
+            plotName= "set output 'After-" + std::to_string(simNum) +  "-Energy-Plot.png'\n";
         }
 
         plotEnergy << "set terminal png\n";

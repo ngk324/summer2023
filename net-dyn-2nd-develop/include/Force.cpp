@@ -4,13 +4,13 @@
 #include <cmath>
 #include <iostream>
 
-Force::Force(double amp, double freq, int size, double alpha) : amplitude{amp}, frequency{freq}, size{size}, alpha{alpha} {}
+Force::Force(double amp, int size) : amplitude{amp}, size{size} {}
 
 void Force::insertForceElement(int idx)
 {
     nonZeroElements.push_back(idx);
 }
-
+/*
 Eigen::VectorXf Force::sinusoidalForce(double t)
 {
     Eigen::VectorXf force(size);
@@ -24,7 +24,7 @@ Eigen::VectorXf Force::sinusoidalForce(double t)
         force(idx) = amplitude * sin(frequency * t);
     }
     return force;
-}
+}*/
 
 /*
 Eigen::VectorXf Force::sinCauchyForce(double t)

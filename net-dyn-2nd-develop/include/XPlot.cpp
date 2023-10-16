@@ -2,8 +2,10 @@
 #include <numeric>
 #include <vector>
 
+#include "gdMain.hpp"
+
 namespace XPlot{
-    void generateXPlot(Gnuplot &plotX, std::vector<double> &XValues, int simNum, int seed){
+    void generateXPlot(Gnuplot &plotX, std::vector<double> &XValues){
 
         double minVal = *std::min_element(XValues.begin(), XValues.end());
         double maxVal = *std::max_element(XValues.begin(), XValues.end());
@@ -19,62 +21,22 @@ namespace XPlot{
 
         plotX << "plot '-' u 1:2 with lines lc rgb'red' notitle\n"; 
 
-        for (size_t i = 0; i < XValues.size(); ++i) {
-            plotX << i << " " << XValues[i] << "\n";
-        }
 
         plotX << "e\n";
 
-        std::string plotName= "set output ";
+        std::string plotName;
 
-        if(simNum == 0){
-            plotName += "'Before-'";
+        if(beforeGrad){
+            plotName="set output 'Before-" + std::to_string(simNum) +  "-TwoNorm-Plot.png'\n";
         } 
         else{
-            plotName += "'After-'";
+            plotName= "set output 'After-" + std::to_string(simNum) +  "-TwoNorm-Plot.png'\n";
         }
-
-
-        if(seed == 10){
-            plotName += "'seed10-'";
-        }
-        else if(seed == 11){
-            plotName += "'seed11-'";
-        }
-        else if(seed == 12){
-            plotName += "'seed12-'";
-        }
-        else if(seed == 13){
-            plotName += "'seed13-'";
-        }
-        else if(seed == 14){
-            plotName += "'seed14-'";
-        }
-        else if(seed == 15){
-            plotName += "'seed15-'";
-        }
-        else if(seed == 16){
-            plotName += "'seed16-'";
-        }
-        else if(seed == 17){
-            plotName += "'seed17-'";
-        }
-        else if(seed == 18){
-            plotName += "'seed18-'";
-        }
-        else if(seed == 19){
-            plotName += "'seed19-'";
-        }
-
-        plotName += "'XPlot.png'\n";
-
-        
 
         plotX << "set terminal png\n";
-        //plotEnergy << "set output 'EnergyPlot.png'\n";
+        //plotX << "set output 'TwoNormPlot.png'\n";
         plotX << plotName;
         plotX << "replot\n";
-
 
         plotX.flush();
         usleep(10000);

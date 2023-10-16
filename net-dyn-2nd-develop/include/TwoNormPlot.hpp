@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace twoNormPlot{
-    void generateTwoNormPlot(Gnuplot &plotTwoNorm, std::vector<double> &twoNormValues, int simNum, int seed);
+    void generateTwoNormPlot(Gnuplot &plotTwoNorm, std::vector<double> &twoNormValues);
 }
 
 #endif

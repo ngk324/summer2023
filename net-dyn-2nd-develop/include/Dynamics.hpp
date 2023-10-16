@@ -18,13 +18,8 @@ public:
     double dampingCoeff;
     double stiffnessCoeff;
     double epsilon;
-    int simNum;
-    int seed;
-    double frequency;
-    double alpha;
-    double randProb;
 
-    Dynamics(int sim_time, int sim_steps, double damping, double stiffness, double epsilon, int simNum, int seed, double frequency, double alpha, double randProb);
+    Dynamics(int sim_time, int sim_steps, double damping, double stiffness, double epsilon);
 
     Eigen::VectorXf getStateVector(Graph &g) const;
     void setNodeStates(Graph &g, Eigen::VectorXf &states) const;

@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace XPlot{
-    void generateXPlot(Gnuplot &plotX, std::vector<double> &XValues, int simNum, int seed);
+    void generateXPlot(Gnuplot &plotX, std::vector<double> &XValues);
 }
 
 #endif
