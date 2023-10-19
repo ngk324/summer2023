@@ -26,6 +26,8 @@ private:
     static double defaultEdgeThickness;
 
     cv::Point transformGraphToPlot(const Node &n) const;
+        cv::Point transformGraphToPlotCircle(double value) const;
+
 
 public:
     Plot(std::string name, int scale, int vPadding, int hPadding, int xMax, int yMax);
@@ -42,9 +44,18 @@ public:
 
     void plotNode(Node &n, double max, double min, int size = defaultNodeSize);
 
+    void plotNodeCircle(Node &n, double max, double min, int num, int size = defaultNodeSize);
+
+
     void plotEdge(Node &n1, Node &n2, double thickness=defaultEdgeThickness, CvScalar color=defaultEdgeColor);
 
+    void plotEdgeCircle(double value1, double value2, double thickness=defaultEdgeThickness, CvScalar color=defaultEdgeColor);
+
+
     void plotGraph(Graph &g);
+        
+    void plotGraphCircle(Graph &g);
+
 
     void initWindow();
 

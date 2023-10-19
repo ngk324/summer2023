@@ -103,6 +103,7 @@ void Plot::plotEdge(Node &n1, Node &n2,  double thickness, CvScalar color)
     cv::line(currentImg, transformGraphToPlot(n1), transformGraphToPlot(n2), color, thickness);
 }
 
+
 double Plot::round(double var, int place)
 {
     double value = (int)(var * 10000 + .5);
@@ -135,6 +136,76 @@ void Plot::plotGraph(Graph &g)
     for (int i{0}; i < g.nodes.size(); i++)
     {
         plotNode(*g.nodes[i], maxEV, minEV);
+    }
+}
+
+void Plot::plotEdgeCircle(double value1, double value2,  double thickness, CvScalar color)
+{
+    // alpha masking 
+    cv::Mat overlay = currentImg.clone();
+    cv::Mat original = currentImg.clone();
+    cv::line(overlay, transformGraphToPlotCircle(value1), transformGraphToPlotCircle(value2), color, thickness);
+    double alpha = 0.5;
+    cv::addWeighted(overlay, alpha, original, 1 - alpha, 0, currentImg);
+
+}
+
+cv::Point Plot::transformGraphToPlotCircle(double value) const
+{
+    double x = (cos(value) + 1.1) * (double) plotScale / 2.0;
+    double y = (sin(value) + 1.025) * (double) plotScale / 2.0;
+
+    return (cvPoint(x*12,y*12));
+}
+
+void Plot::plotNodeCircle(Node &n, double max, double min, int num, int size)
+{
+    double value = ((double)num)*((3.14159265358979323846264338327 * 2.0) / 100.0);
+    CvScalar color;
+    double val;
+    if (n.z > 0){
+        val = abs(n.z) * (255.0/abs(max));
+        color = cvScalar(val, 0, 0);
+    }
+    else{
+        val = abs(n.z) * (255.0/abs(min));
+        color = cvScalar(0, 0, val);
+    }
+    //cv::circle(currentImg, transformGraphToPlot(n), size, cvScalar(0, 0, 0), -1);
+    //cv::circle(currentImg, cvPoint(plotScale * (cos(value) * 0.95), plotScale * (sin(value))*0.95) , size, color, -1);
+    cv::circle(currentImg, transformGraphToPlotCircle(value), size, color, -1);
+
+    //cv::circle(currentImg, cvPoint(plotScale * (cos(value) + verticalPadding), plotScale * (sin(value) + horizontalPadding)) , size, color, -1);
+}
+
+
+void Plot::plotGraphCircle(Graph &g)
+{   
+    double max = std::max<double>(g.adjacencyMatrix.maxCoeff(),0.0);
+    double min = std::min<double>(g.adjacencyMatrix.minCoeff(),0.0);
+
+    double maxEV = std::max<double>(g.eigenValues.maxCoeff(),0.0);
+    double minEV = std::min<double>(g.eigenValues.minCoeff(),0.0);
+    //std::cout << "edges plotted \n";
+    
+    for (int i{0}; i < g.nodes.size()-1; i++)
+    {
+        for (int j{i+1}; j < g.nodes.size(); j++)
+        {
+            double edgeWeight = g.adjacencyMatrix(g.nodes[i]->id,g.nodes[j]->id);
+            CvScalar edgeColor = cvScalar(0,0,0);
+            edgeColor.val[0] = 255-(((int)(g.adjacencyMatrix.coeff((*g.nodes[i]).id,g.nodes[j]->id)*255))/(max-min));
+            edgeColor.val[1] = edgeColor.val[0];
+            edgeColor.val[2] = edgeColor.val[0];
+            //if((*g.nodes[i]).id < (*g.nodes[i]->neighbors[j]).id){
+                plotEdgeCircle(g.nodes[i]->id, g.nodes[j]->id, 75/sqrt(g.nodes.size()), edgeColor);
+            //}
+        }
+    }
+
+    for (int i{0}; i < g.nodes.size(); i++)
+    {
+        plotNodeCircle(*g.nodes[i], maxEV, minEV,i);
     }
 }
 
