@@ -53,3 +53,6 @@ gdMain:
 		$@,\
 		$(CC) $(CFLAGS) $(WARNS) $(INC_LOCAL) -o $(BIN_FOLDER)/$@ $(SRC_FOLDER)/$@.cpp $(MAIN_HEADERS) $(LIB_FOLDERS) $(LIBS) $(LIBS_OPENCV) $(LIBS_GNUPLOT)\
 	)
+
+avg:
+	g++ -o bin/avg src/avgMain.cpp
